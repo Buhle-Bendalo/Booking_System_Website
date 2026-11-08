@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Reception dashboard | Lumina Health</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        medical: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gray-50 font-sans text-gray-800 antialiased">
+
+    <!-- ============ Sign in ============ -->
+    <main id="login-view">
+        <div class="flex min-h-screen items-center justify-center px-4 py-10">
+            <div class="w-full max-w-md">
+                <div class="flex items-center justify-center gap-2">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-medical-500 text-white shadow-md">
+                        <i class="fa-solid fa-notes-medical text-xl"></i>
+                    </div>
+                    <span class="text-2xl font-bold tracking-tight text-medical-900">Lumina<span class="text-medical-500">Health</span></span>
+                </div>
+
+                <div class="mt-6 rounded-2xl border border-gray-100 bg-white p-8 shadow-sm">
+                    <h1 class="text-xl font-bold text-medical-900">Reception sign in</h1>
+                    <p class="mt-1 text-sm text-gray-500">Staff only. This dashboard shows confidential patient information.</p>
+
+                    <div id="setup-notice" hidden class="mt-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900"></div>
+
+                    <form id="login-form" class="mt-6 space-y-4" novalidate>
+                        <label class="block">
+                            <span class="mb-1 block text-sm font-medium text-gray-700">Username</span>
+                            <input id="login-user" type="text" autocomplete="off" required
+                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-500">
+                        </label>
+                        <label class="block">
+                            <span class="mb-1 block text-sm font-medium text-gray-700">Password</span>
+                            <input id="login-pass" type="password" autocomplete="off" required
+                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-500">
+                        </label>
+                        <button id="login-btn" type="submit"
+                                class="w-full rounded-full bg-medical-500 px-6 py-2.5 font-semibold text-white shadow-lg shadow-medical-500/30 transition-colors hover:bg-medical-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-800 disabled:opacity-60">
+                            Sign in
+                        </button>
+                        <p id="login-msg" role="alert" class="min-h-[1.25rem] text-sm text-red-700"></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============ Dashboard ============ -->
+    <div id="app-view" hidden>
+        <header class="sticky top-0 z-30 border-b border-gray-200 bg-white">
+            <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center gap-3">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-medical-500 text-white shadow-md">
+                        <i class="fa-solid fa-notes-medical"></i>
+                    </div>
+                    <div class="leading-tight">
+                        <p class="font-bold tracking-tight text-medical-900">Lumina<span class="text-medical-500">Health</span></p>
+                        <p class="text-xs text-gray-500">Reception dashboard</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 text-sm">
+                    <span id="updated" class="hidden text-xs text-gray-500 sm:inline"></span>
+                    <button id="refresh" type="button" class="rounded-lg border border-gray-200 px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500">
+                        <i class="fa-solid fa-rotate mr-1.5 text-medical-500"></i>Refresh
+                    </button>
+                    <span class="hidden text-gray-500 sm:inline">Signed in as <strong id="who" class="font-semibold text-gray-800"></strong></span>
+                    <button id="signout" type="button" class="rounded-lg bg-medical-900 px-3 py-1.5 font-medium text-white hover:bg-medical-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500">
+                        Sign out
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-8 lg:px-8">
+
+            <nav role="tablist" aria-label="Dashboard sections" class="mb-6 flex gap-2 overflow-x-auto lg:mb-0 lg:flex-col lg:self-start lg:sticky lg:top-24">
+                <button id="tab-overview" role="tab" type="button" aria-selected="true" aria-controls="panel-overview">
+                    <i class="fa-solid fa-chart-column w-5 text-center"></i>Overview
+                </button>
+                <button id="tab-bookings" role="tab" type="button" aria-selected="false" aria-controls="panel-bookings">
+                    <i class="fa-regular fa-calendar-check w-5 text-center"></i>Bookings
+                </button>
+                <button id="tab-patients" role="tab" type="button" aria-selected="false" aria-controls="panel-patients">
+                    <i class="fa-solid fa-user-group w-5 text-center"></i>Patients
+                </button>
+                <button id="tab-prescriptions" role="tab" type="button" aria-selected="false" aria-controls="panel-prescriptions">
+                    <i class="fa-solid fa-prescription-bottle-medical w-5 text-center"></i>Prescriptions
+                </button>
+            </nav>
+
+            <div class="min-w-0">
+
+                <!-- Overview -->
+                <section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+                    <div id="stats" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"></div>
+
+                    <div class="mt-6 grid gap-6 xl:grid-cols-5">
+                        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm xl:col-span-3">
+                            <h2 class="font-bold text-medical-900">Confirmed bookings, next 14 days</h2>
+                            <p class="text-sm text-gray-500">Today is the dark bar.</p>
+                            <div id="chart" class="mt-5 flex h-56 items-stretch gap-1.5"></div>
+                        </div>
+
+                        <div class="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm xl:col-span-2">
+                            <h2 class="font-bold text-medical-900">Today's schedule</h2>
+                            <ul id="schedule" class="mt-3"></ul>
+                            <p id="schedule-empty" hidden class="mt-3 text-sm text-gray-500">No appointments today.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Bookings -->
+                <section id="panel-bookings" role="tabpanel" aria-labelledby="tab-bookings" hidden>
+                    <div class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-medium text-gray-600">From</span>
+                                <input id="f-from" type="date" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-medium text-gray-600">To</span>
+                                <input id="f-to" type="date" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-medium text-gray-600">Status</span>
+                                <select id="f-status" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                                    <option value="all">All statuses</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                    <option value="no_show">No-show</option>
+                                    <option value="pending">Pending</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-medium text-gray-600">Doctor</span>
+                                <select id="f-doctor" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                                    <option value="all">All doctors</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-medium text-gray-600">Search this list</span>
+                                <input id="f-search" type="search" placeholder="Name, phone or doctor"
+                                       class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                        <div class="flex items-center justify-between gap-4 px-5 py-4">
+                            <p id="bookings-count" class="text-sm font-medium text-gray-700" aria-live="polite"></p>
+                            <button id="export-csv" type="button" class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500">
+                                <i class="fa-solid fa-download mr-1.5 text-medical-500"></i>Export CSV
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[56rem] text-left">
+                                <caption class="sr-only">Bookings in the selected date range</caption>
+                                <thead class="bg-gray-50 text-xs font-semibold text-gray-600">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3">Date</th>
+                                        <th scope="col" class="px-4 py-3">Time</th>
+                                        <th scope="col" class="px-4 py-3">Patient</th>
+                                        <th scope="col" class="px-4 py-3">Phone</th>
+                                        <th scope="col" class="px-4 py-3">Doctor</th>
+                                        <th scope="col" class="px-4 py-3">Reason</th>
+                                        <th scope="col" class="px-4 py-3">Status</th>
+                                        <th scope="col" class="px-4 py-3">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bookings-body"></tbody>
+                            </table>
+                        </div>
+                        <p id="bookings-empty" hidden class="px-5 py-8 text-center text-sm text-gray-500">No bookings match these filters.</p>
+                    </div>
+                    <p class="mt-3 text-xs text-gray-500">Cancelling frees the slot but does not message the patient. Reasons are health information: keep this screen private.</p>
+                </section>
+
+                <!-- Patients -->
+                <section id="panel-patients" role="tabpanel" aria-labelledby="tab-patients" hidden>
+                    <form id="p-form" class="flex flex-wrap items-end gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <label class="block min-w-[14rem] flex-1">
+                            <span class="mb-1 block text-xs font-medium text-gray-600">Find a patient</span>
+                            <input id="p-q" type="search" placeholder="Name, cellphone number or ID number"
+                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                        </label>
+                        <button type="submit" class="rounded-full bg-medical-500 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-medical-500/30 hover:bg-medical-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-800">
+                            Search
+                        </button>
+                    </form>
+
+                    <div class="mt-4 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                        <p id="patients-count" class="px-5 py-4 text-sm font-medium text-gray-700" aria-live="polite"></p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[44rem] text-left">
+                                <caption class="sr-only">Patients matching the search</caption>
+                                <thead class="bg-gray-50 text-xs font-semibold text-gray-600">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3">Patient</th>
+                                        <th scope="col" class="px-4 py-3">Phone</th>
+                                        <th scope="col" class="px-4 py-3">ID number</th>
+                                        <th scope="col" class="px-4 py-3">Registered</th>
+                                        <th scope="col" class="px-4 py-3">Upcoming</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="patients-body"></tbody>
+                            </table>
+                        </div>
+                        <p id="patients-empty" hidden class="px-5 py-8 text-center text-sm text-gray-500">No patients found.</p>
+                    </div>
+                    <p class="mt-3 text-xs text-gray-500">Opening a patient's file is recorded in the audit log.</p>
+                </section>
+
+                <!-- Prescriptions -->
+                <section id="panel-prescriptions" role="tabpanel" aria-labelledby="tab-prescriptions" hidden>
+                    <div class="flex flex-wrap items-end gap-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                        <label class="block min-w-[14rem]">
+                            <span class="mb-1 block text-xs font-medium text-gray-600">Status</span>
+                            <select id="rx-status" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                                <option value="">All</option>
+                                <option value="Pending Review">Pending Review</option>
+                            </select>
+                        </label>
+                        <label class="block min-w-[14rem] flex-1">
+                            <span class="mb-1 block text-xs font-medium text-gray-600">Search</span>
+                            <input id="rx-search" type="search" placeholder="Patient, phone or medication"
+                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-medical-500">
+                        </label>
+                    </div>
+
+                    <div class="mt-4 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                        <p id="rx-count" class="px-5 py-4 text-sm font-medium text-gray-700" aria-live="polite"></p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[56rem] text-left">
+                                <caption class="sr-only">Prescription requests</caption>
+                                <thead class="bg-gray-50 text-xs font-semibold text-gray-600">
+                                    <tr>
+                                        <th scope="col" class="px-4 py-3">Received</th>
+                                        <th scope="col" class="px-4 py-3">Patient</th>
+                                        <th scope="col" class="px-4 py-3">Phone</th>
+                                        <th scope="col" class="px-4 py-3">Medication</th>
+                                        <th scope="col" class="px-4 py-3">Status</th>
+                                        <th scope="col" class="px-4 py-3">Collection</th>
+                                        <th scope="col" class="px-4 py-3">Reviewed</th>
+                                        <th scope="col" class="px-4 py-3">Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rx-body"></tbody>
+                            </table>
+                        </div>
+                        <p id="rx-empty" hidden class="px-5 py-8 text-center text-sm text-gray-500">No prescriptions match.</p>
+                    </div>
+                    <p class="mt-3 text-xs text-gray-500">Prescriptions are health information: keep this screen private. Viewing the list is recorded in the audit log.</p>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient file drawer -->
+    <div id="drawer-backdrop" hidden class="fixed inset-0 z-40 bg-black/30"></div>
+    <aside id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="drawer-title"
+           class="fixed right-0 top-0 z-50 h-full w-full max-w-md overflow-y-auto bg-white shadow-2xl">
+        <div class="sticky top-0 flex items-center justify-between gap-4 border-b border-gray-100 bg-white px-6 py-4">
+            <h2 id="drawer-title" class="truncate text-lg font-bold text-medical-900">Patient</h2>
+            <button id="drawer-close" type="button" aria-label="Close patient file"
+                    class="rounded-lg px-2 py-1 text-gray-500 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+        <div id="drawer-body" class="px-6 pb-10 pt-2"></div>
+    </aside>
+
+    <div id="toast" role="status" aria-live="polite" hidden></div>
+
+    <script>
+        // ------------------------------------------------------------------
+        // PASTE YOUR TWO VALUES HERE. Keep the quotes.
+        //   URL: Supabase > Project Settings > API (looks like https://xxxx.supabase.co)
+        //   Key: the PUBLISHABLE key (sb_publishable_...).
+        // NEVER paste the secret key (sb_secret_...) into this file. Anyone who opens
+        // the page can read it, and it opens your whole database, patient data included.
+        // The staff login is checked inside the database, not in this page.
+        // ------------------------------------------------------------------
+        const SUPABASE_URL = 'PASTE_YOUR_SUPABASE_URL';
+        const SUPABASE_PUBLISHABLE_KEY = 'PASTE_YOUR_PUBLISHABLE_KEY';
+        // ------------------------------------------------------------------
+
+        (function () {
+            'use strict';
+
+            var TZ = 'Africa/Johannesburg';
+            var STORE_KEY = 'lumina_admin_session';
+            var TABS = ['overview', 'bookings', 'patients', 'prescriptions'];
+            var state = { token: null, user: null, tab: 'overview', bookings: [], rx: [], doctorsLoaded: false, timer: null };
+
+            function $(id) { return document.getElementById(id); }
+
+            function el(tag, opts, kids) {
+                var n = document.createElement(tag);
+                opts = opts || {};
+                if (opts.cls) { n.className = opts.cls; }
+                if (opts.text !== undefined && opts.text !== null) { n.textContent = String(opts.text); }
+                if (opts.attrs) { Object.keys(opts.attrs).forEach(function (k) { n.setAttribute(k, opts.attrs[k]); }); }
+                if (opts.on) { Object.keys(opts.on).forEach(function (k) { n.addEventListener(k, opts.on[k]); }); }
+                (kids || []).forEach(function (k) { if (k) { n.appendChild(k); } });
+                return n;
+            }
+            function clear(n) { n.textContent = ''; }
+
+            // ---------------- configuration safety ----------------
+            function keyProblem() {
+                var key = String(SUPABASE_PUBLISHABLE_KEY || '').trim();
+                if (/PASTE_YOUR/.test(SUPABASE_URL) || /PASTE_YOUR/.test(key)) {
+                    return 'Add your Supabase URL and publishable key at the top of the script in this file.';
+                }
+                if (/^sb_secret_/i.test(key)) {
+                    return 'That is a secret key. Remove it from this file and use the publishable key instead.';
+                }
+                var parts = key.split('.');
+                if (parts.length === 3) {
+                    try {
+                        var payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        if (payload && payload.role === 'service_role') {
+                            return 'That is a service_role key. Remove it from this file and use the publishable (anon) key instead.';
+                        }
+                    } catch (e) { /* not a readable JWT: carry on */ }
+                }
+                return '';
+            }
+
+            function explain(err) {
+                var m = String((err && err.message) || err);
+                if (/HTTP 404/.test(m)) { return 'The database does not have the dashboard functions yet. Run patch_admin_dashboard.sql in the Supabase SQL Editor.'; }
+                if (/HTTP 401|HTTP 403/.test(m)) { return 'The database rejected the key. Check that you pasted the publishable key and the correct project URL.'; }
+                if (/Failed to fetch|NetworkError|Load failed/i.test(m)) { return 'Could not reach the database. Check the project URL and your internet connection.'; }
+                return 'Something went wrong (' + m + ').';
+            }
+
+            // ---------------- talking to Supabase ----------------
+            function rpc(name, body) {
+                return fetch(String(SUPABASE_URL).replace(/\/+$/, '') + '/rest/v1/rpc/' + name, {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {})
+                }).then(function (res) {
+                    if (!res.ok) { throw new Error('HTTP ' + res.status); }
+                    return res.json();
+                });
+            }
+
+            // authenticated call: adds the session token and signs out if it has expired
+            function call(name, body) {
+                var payload = Object.assign({ p_token: state.token }, body || {});
+                return rpc(name, payload).then(function (r) {
+                    if (r && r.ok === 'denied') {
+                        expire('Your session has ended. Please sign in again.');
+                        throw new Error('denied');
+                    }
+                    return r;
+                });
+            }
+
+            function handleErr(err) {
+                if (String((err && err.message) || err) === 'denied') { return; }
+                toast(explain(err), true);
+            }
+
+            // ---------------- formatting (all clinic times in Johannesburg) ----------------
+            var dateFmt = new Intl.DateTimeFormat('en-ZA', { timeZone: TZ, weekday: 'short', day: '2-digit', month: 'short' });
+            var timeFmt = new Intl.DateTimeFormat('en-ZA', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false });
+            var longFmt = new Intl.DateTimeFormat('en-ZA', { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' });
+            var weekdayFmt = new Intl.DateTimeFormat('en-ZA', { timeZone: 'UTC', weekday: 'short' });
+            var ymdParts = new Intl.DateTimeFormat('en-US', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+
+            function fmtDate(iso) { return dateFmt.format(new Date(iso)); }
+            function fmtTime(iso) { return timeFmt.format(new Date(iso)); }
+            function fmtDateTime(iso) { return fmtDate(iso) + ', ' + fmtTime(iso); }
+            function fmtYmd(ymd) { return ymd ? longFmt.format(new Date(ymd + 'T12:00:00Z')) : ''; }
+
+            function todayYmd() {
+                var o = {};
+                ymdParts.formatToParts(new Date()).forEach(function (p) { o[p.type] = p.value; });
+                return o.year + '-' + o.month + '-' + o.day;
+            }
+            function addDays(ymd, n) {
+                var p = ymd.split('-');
+                var d = new Date(Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2])) + n * 86400000);
+                return d.toISOString().slice(0, 10);
+            }
+
+            function maskId(id) { return id ? '*********' + String(id).slice(-4) : 'Not on file'; }
+
+            var STATUS = {
+                confirmed: ['Confirmed', 'bg-teal-100 text-teal-800'],
+                completed: ['Completed', 'bg-green-100 text-green-800'],
+                cancelled: ['Cancelled', 'bg-gray-200 text-gray-700'],
+                no_show: ['No-show', 'bg-amber-100 text-amber-800'],
+                pending: ['Pending', 'bg-blue-100 text-blue-800'],
+                reschedule_requested: ['Reschedule requested', 'bg-purple-100 text-purple-800']
+            };
+            function chip(status) {
+                var s = STATUS[status] || [String(status), 'bg-gray-100 text-gray-700'];
+                return el('span', { cls: 'inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ' + s[1], text: s[0] });
+            }
+
+            // ---------------- toast ----------------
+            var toastTimer = null;
+            function toast(text, bad) {
+                var t = $('toast');
+                t.textContent = text;
+                t.className = 'fixed bottom-4 left-1/2 z-[60] max-w-[90vw] -translate-x-1/2 rounded-full px-5 py-2.5 text-sm font-medium text-white shadow-lg ' + (bad ? 'bg-red-700' : 'bg-medical-900');
+                t.hidden = false;
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(function () { t.hidden = true; }, 3500);
+            }
+
+            // ---------------- session ----------------
+            function saveSession() { try { sessionStorage.setItem(STORE_KEY, JSON.stringify({ token: state.token, user: state.user })); } catch (e) {} }
+            function loadSession() {
+                try {
+                    var s = JSON.parse(sessionStorage.getItem(STORE_KEY) || 'null');
+                    if (s && s.token) { state.token = s.token; state.user = s.user; return true; }
+                } catch (e) {}
+                return false;
+            }
+            function dropSession() {
+                state.token = null; state.user = null;
+                try { sessionStorage.removeItem(STORE_KEY); } catch (e) {}
+            }
+
+            function startTimer() {
+                stopTimer();
+                state.timer = setInterval(function () { if (!document.hidden) { refreshActive(); } }, 60000);
+            }
+            function stopTimer() { if (state.timer) { clearInterval(state.timer); state.timer = null; } }
+
+            function setLoginMsg(text, neutral) {
+                var m = $('login-msg');
+                m.textContent = text || '';
+                m.className = 'min-h-[1.25rem] text-sm ' + (neutral ? 'text-gray-500' : 'text-red-700');
+            }
+            function showLogin(message) {
+                stopTimer(); closeDrawer();
+                $('app-view').hidden = true;
+                $('login-view').hidden = false;
+                setLoginMsg(message);
+            }
+            function showApp() {
+                $('login-view').hidden = true;
+                $('app-view').hidden = false;
+                $('who').textContent = state.user || '';
+                startTimer();
+                selectTab(state.tab);
+            }
+            function expire(message) { dropSession(); showLogin(message); }
+
+            // ---------------- tabs ----------------
+            function tabClass(on) {
+                return 'flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500 ' +
+                       (on ? 'bg-medical-500 text-white shadow' : 'text-gray-600 hover:bg-white');
+            }
+            function selectTab(name) {
+                state.tab = name;
+                TABS.forEach(function (t) {
+                    var on = t === name;
+                    $('panel-' + t).hidden = !on;
+                    var b = $('tab-' + t);
+                    b.setAttribute('aria-selected', on ? 'true' : 'false');
+                    b.className = tabClass(on);
+                });
+                refreshActive();
+            }
+            function refreshActive() {
+                if (!state.token) { return; }
+                if (state.tab === 'overview') { loadOverview(); }
+                else if (state.tab === 'bookings') { loadBookings(); }
+                else if (state.tab === 'prescriptions') { loadPrescriptions(); }
+                else { loadPatients(); }
+            }
+            function stamp() {
+                var u = $('updated');
+                u.textContent = 'Updated ' + fmtTime(new Date().toISOString());
+            }
+
+            // ---------------- overview ----------------
+            function statCard(label, value, hint, accent) {
+                return el('div', { cls: 'rounded-2xl border p-5 shadow-sm ' + (accent ? 'border-medical-500 bg-medical-500 text-white' : 'border-gray-100 bg-white') }, [
+                    el('p', { cls: 'text-sm ' + (accent ? 'text-teal-50' : 'text-gray-500'), text: label }),
+                    el('p', { cls: 'mt-2 text-4xl font-extrabold tracking-tight', text: value }),
+                    el('p', { cls: 'mt-1 text-xs ' + (accent ? 'text-teal-50' : 'text-gray-500'), text: hint })
+                ]);
+            }
+
+            function renderChart(days) {
+                var box = $('chart');
+                clear(box);
+                var max = 1;
+                days.forEach(function (d) { if (d.n > max) { max = d.n; } });
+                days.forEach(function (d, i) {
+                    var pct = d.n === 0 ? 2 : Math.max(8, Math.round((d.n / max) * 100));
+                    var bar = el('div', { cls: 'w-full rounded-t-md ' + (i === 0 ? 'bg-medical-900' : 'bg-medical-500'), attrs: { title: d.n + ' confirmed on ' + d.day } });
+                    bar.style.height = pct + '%';
+                    var when = new Date(d.day + 'T12:00:00Z');
+                    box.appendChild(el('div', { cls: 'flex min-w-0 flex-1 flex-col items-center' }, [
+                        el('span', { cls: 'h-5 text-xs font-semibold text-gray-700', text: d.n }),
+                        el('div', { cls: 'flex w-full flex-1 items-end' }, [bar]),
+                        el('span', { cls: 'mt-1 text-[0.65rem] leading-tight text-gray-500', text: weekdayFmt.format(when) }),
+                        el('span', { cls: 'text-[0.65rem] font-semibold leading-tight text-gray-700', text: d.day.slice(8) })
+                    ]));
+                });
+            }
+
+            function renderSchedule(rows) {
+                var ul = $('schedule');
+                clear(ul);
+                $('schedule-empty').hidden = rows.length > 0;
+                rows.forEach(function (r) {
+                    ul.appendChild(el('li', { cls: 'flex items-center gap-3 border-b border-gray-100 py-3 last:border-0' }, [
+                        el('span', { cls: 'w-14 flex-none text-sm font-semibold tabular-nums text-medical-800', text: fmtTime(r.time) }),
+                        el('div', { cls: 'min-w-0 flex-1' }, [
+                            el('p', { cls: 'truncate text-sm font-medium text-gray-900', text: r.patient }),
+                            el('p', { cls: 'truncate text-xs text-gray-500', text: r.doctor })
+                        ]),
+                        chip(r.status)
+                    ]));
+                });
+            }
+
+            function loadOverview() {
+                call('admin_overview').then(function (r) {
+                    if (!r || r.ok !== 'yes') { throw new Error('unexpected reply'); }
+                    var stats = $('stats');
+                    clear(stats);
+                    stats.appendChild(statCard('Today', r.today_confirmed, 'confirmed appointments', true));
+                    stats.appendChild(statCard('Next 7 days', r.week_confirmed, 'confirmed appointments'));
+                    stats.appendChild(statCard('Patients', r.patients_total, r.patients_new_7d + ' new this week'));
+                    stats.appendChild(statCard('No ID on file', r.missing_id, 'patients to follow up'));
+                    stats.appendChild(statCard('Cancelled', r.cancelled_30d, 'in the last 30 days'));
+                    stats.appendChild(statCard('No-shows', r.no_show_30d, 'in the last 30 days'));
+                    renderChart(r.by_day || []);
+                    renderSchedule(r.today_schedule || []);
+                    stamp();
+                }).catch(handleErr);
+            }
+
+            // ---------------- bookings ----------------
+            function ensureDoctorFilter() {
+                if (state.doctorsLoaded) { return; }
+                state.doctorsLoaded = true;
+                rpc('list_doctors').then(function (rows) {
+                    var sel = $('f-doctor');
+                    (rows || []).forEach(function (d) {
+                        sel.appendChild(el('option', { text: d.full_name, attrs: { value: d.full_name } }));
+                    });
+                }).catch(function () { state.doctorsLoaded = false; });
+            }
+
+            function setDefaultDates() {
+                if (!$('f-from').value) { $('f-from').value = todayYmd(); }
+                if (!$('f-to').value) { $('f-to').value = addDays($('f-from').value, 14); }
+            }
+
+            function loadBookings() {
+                ensureDoctorFilter();
+                setDefaultDates();
+                call('admin_list_bookings', {
+                    p_from: $('f-from').value,
+                    p_to: $('f-to').value,
+                    p_status: $('f-status').value || 'all',
+                    p_doctor: $('f-doctor').value || 'all'
+                }).then(function (r) {
+                    if (!r || r.ok !== 'yes') { throw new Error('unexpected reply'); }
+                    state.bookings = r.rows || [];
+                    renderBookings();
+                    stamp();
+                }).catch(handleErr);
+            }
+
+            function visibleBookings() {
+                var q = $('f-search').value.trim().toLowerCase();
+                if (!q) { return state.bookings; }
+                return state.bookings.filter(function (b) {
+                    return [b.patient_name, b.phone_number, b.doctor].join(' ').toLowerCase().indexOf(q) !== -1;
+                });
+            }
+
+            function actionBtn(label, cls, handler) {
+                return el('button', {
+                    cls: 'rounded-md border px-2.5 py-1 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500 ' + cls,
+                    text: label, attrs: { type: 'button' }, on: { click: handler }
+                });
+            }
+
+            var ACTION_TEXT = { confirmed: 'Confirm this booking request', cancelled: 'Cancel this booking', completed: 'Mark as completed', no_show: 'Mark as a no-show' };
+            function changeStatus(b, status) {
+                var who = b.patient_name + ', ' + fmtDateTime(b.chosen_slot);
+                var extra = status === 'cancelled' ? ' This frees the slot. The patient is not notified automatically.' : status === 'confirmed' ? ' Reminders will be sent before the appointment. The patient is not notified of the confirmation automatically, so phone them if needed.' : '';
+                if (!confirm(ACTION_TEXT[status] + '?\n' + who + '.' + extra)) { return; }
+                call('admin_set_booking_status', { p_booking_id: b.booking_id, p_status: status }).then(function (r) {
+                    if (r && r.ok === 'yes') { toast('Booking updated.'); loadBookings(); }
+                    else if (r && r.ok === 'notallowed') { toast("That booking can't be changed any more. The list has been refreshed.", true); loadBookings(); }
+                    else { toast('Could not update the booking.', true); }
+                }).catch(handleErr);
+            }
+
+            function cell(content, cls) {
+                var td = el('td', { cls: 'px-4 py-3 text-sm ' + (cls || '') });
+                if (typeof content === 'string') { td.textContent = content; } else { td.appendChild(content); }
+                return td;
+            }
+
+            function renderBookings() {
+                var body = $('bookings-body');
+                clear(body);
+                var rows = visibleBookings();
+                $('bookings-empty').hidden = rows.length > 0;
+                $('bookings-count').textContent = rows.length + (rows.length === 1 ? ' booking' : ' bookings');
+
+                rows.forEach(function (b) {
+                    var future = new Date(b.chosen_slot).getTime() > Date.now();
+                    var actions = el('div', { cls: 'flex flex-wrap gap-2' });
+                    if (b.status === 'pending' && future) {
+                        actions.appendChild(actionBtn('Confirm', 'border-teal-300 bg-teal-50 text-teal-800 hover:bg-teal-100', function () { changeStatus(b, 'confirmed'); }));
+                        actions.appendChild(actionBtn('Decline', 'border-red-200 text-red-700 hover:bg-red-50', function () { changeStatus(b, 'cancelled'); }));
+                    }
+                    if (b.status === 'confirmed') {
+                        if (future) {
+                            actions.appendChild(actionBtn('Cancel', 'border-red-200 text-red-700 hover:bg-red-50', function () { changeStatus(b, 'cancelled'); }));
+                        } else {
+                            actions.appendChild(actionBtn('Completed', 'border-green-200 text-green-800 hover:bg-green-50', function () { changeStatus(b, 'completed'); }));
+                            actions.appendChild(actionBtn('No-show', 'border-amber-200 text-amber-800 hover:bg-amber-50', function () { changeStatus(b, 'no_show'); }));
+                        }
+                    }
+                    var reason = el('span', { cls: 'block max-w-[14rem] truncate text-gray-600', text: b.symptoms || '', attrs: { title: b.symptoms || '' } });
+                    var name = el('button', {
+                        cls: 'text-left font-medium text-medical-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500',
+                        text: b.patient_name, attrs: { type: 'button' }, on: { click: function () { openPatient(b.patient_id); } }
+                    });
+                    body.appendChild(el('tr', { cls: 'border-t border-gray-100 align-top' }, [
+                        cell(fmtDate(b.chosen_slot), 'whitespace-nowrap'),
+                        cell(fmtTime(b.chosen_slot), 'whitespace-nowrap font-semibold tabular-nums'),
+                        cell(name),
+                        cell(b.phone_number || '', 'whitespace-nowrap tabular-nums text-gray-600'),
+                        cell(b.doctor || ''),
+                        cell(reason),
+                        cell(chip(b.status)),
+                        cell(actions)
+                    ]));
+                });
+            }
+
+            // CSV safety: stop spreadsheet programs from running a cell as a formula
+            function csvCell(v) {
+                var s = String(v === null || v === undefined ? '' : v);
+                if (/^[=@\t\r]/.test(s) || (/^[+\-]/.test(s) && !/^\+?[0-9][0-9 ]*$/.test(s))) { s = "'" + s; }
+                return '"' + s.replace(/"/g, '""') + '"';
+            }
+            function exportCsv() {
+                var rows = visibleBookings();
+                if (!rows.length) { toast('Nothing to export.', true); return; }
+                var lines = [['Date', 'Time', 'Patient', 'Phone', 'Doctor', 'Status'].map(csvCell).join(',')];
+                rows.forEach(function (b) {
+                    lines.push([fmtDate(b.chosen_slot), fmtTime(b.chosen_slot), b.patient_name, b.phone_number, b.doctor, b.status].map(csvCell).join(','));
+                });
+                var blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+                var url = URL.createObjectURL(blob);
+                var a = el('a', { attrs: { href: url, download: 'bookings-' + $('f-from').value + '.csv' } });
+                a.click();
+                URL.revokeObjectURL(url);
+                toast('Exported ' + rows.length + (rows.length === 1 ? ' booking' : ' bookings') + ' (no reasons included).');
+            }
+
+            // ---------------- patients ----------------
+            function loadPatients() {
+                call('admin_search_patients', { p_q: $('p-q').value }).then(function (r) {
+                    if (!r || r.ok !== 'yes') { throw new Error('unexpected reply'); }
+                    var rows = r.rows || [];
+                    var body = $('patients-body');
+                    clear(body);
+                    $('patients-empty').hidden = rows.length > 0;
+                    $('patients-count').textContent = rows.length + (rows.length === 1 ? ' patient' : ' patients') + (rows.length === 50 ? ' (showing the first 50)' : '');
+                    rows.forEach(function (p) {
+                        var name = el('button', {
+                            cls: 'text-left font-medium text-medical-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500',
+                            text: p.patient_name, attrs: { type: 'button' }, on: { click: function () { openPatient(p.patient_id); } }
+                        });
+                        body.appendChild(el('tr', { cls: 'border-t border-gray-100' }, [
+                            cell(name),
+                            cell(p.phone_number || '', 'whitespace-nowrap tabular-nums text-gray-600'),
+                            cell(p.id_masked || 'Not on file', 'whitespace-nowrap font-mono tabular-nums ' + (p.id_masked ? 'text-gray-600' : 'text-amber-700')),
+                            cell(p.created_at ? fmtDate(p.created_at) : '', 'whitespace-nowrap text-gray-600'),
+                            cell(String(p.upcoming), 'tabular-nums')
+                        ]));
+                    });
+                    stamp();
+                }).catch(handleErr);
+            }
+
+            // ---------------- prescriptions ----------------
+            function rxChip(status) {
+                var t = String(status || '');
+                var l = t.toLowerCase();
+                var cls = 'bg-gray-100 text-gray-700';
+                if (l.indexOf('reject') > -1 || l.indexOf('declin') > -1) { cls = 'bg-red-100 text-red-800'; }
+                else if (l.indexOf('collect') > -1) { cls = 'bg-green-100 text-green-800'; }
+                else if (l.indexOf('approv') > -1 || l.indexOf('ready') > -1) { cls = 'bg-teal-100 text-teal-800'; }
+                else if (l.indexOf('pend') > -1 || l.indexOf('review') > -1) { cls = 'bg-blue-100 text-blue-800'; }
+                return el('span', { cls: 'inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ' + cls, text: t || 'Unknown' });
+            }
+            function fileNode(f) {
+                if (!f) { return plain('No file'); }
+                if (/^https?:\/\//i.test(f)) {
+                    return el('a', { cls: 'text-medical-600 hover:underline', text: 'Open file', attrs: { href: f, target: '_blank', rel: 'noopener noreferrer' } });
+                }
+                return el('span', { cls: 'break-all text-xs text-gray-600', text: f });
+            }
+
+            function loadPrescriptions() {
+                call('admin_list_prescriptions', { p_status: $('rx-status').value }).then(function (r) {
+                    if (!r || r.ok !== 'yes') { throw new Error('unexpected reply'); }
+                    state.rx = r.rows || [];
+                    // keep the filter list in step with the statuses that really exist
+                    var sel = $('rx-status'), have = {};
+                    Array.prototype.forEach.call(sel.options, function (o) { have[o.value] = true; });
+                    state.rx.forEach(function (x) {
+                        if (x.status && !have[x.status]) { have[x.status] = true; sel.appendChild(el('option', { text: x.status, attrs: { value: x.status } })); }
+                    });
+                    renderPrescriptions();
+                    stamp();
+                }).catch(handleErr);
+            }
+            function renderPrescriptions() {
+                var q = $('rx-search').value.trim().toLowerCase();
+                var rows = state.rx.filter(function (x) {
+                    if (!q) { return true; }
+                    return (String(x.patient_name || '') + ' ' + String(x.phone_number || '') + ' ' + String(x.medication_name || '')).toLowerCase().indexOf(q) > -1;
+                });
+                var body = $('rx-body');
+                clear(body);
+                $('rx-empty').hidden = rows.length > 0;
+                $('rx-count').textContent = rows.length + (rows.length === 1 ? ' prescription' : ' prescriptions') + (state.rx.length === 200 ? ' (showing the latest 200)' : '');
+                rows.forEach(function (x) {
+                    var name = el('button', {
+                        cls: 'text-left font-medium text-medical-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500',
+                        text: x.patient_name, attrs: { type: 'button' }, on: { click: function () { openPatient(x.patient_id); } }
+                    });
+                    body.appendChild(el('tr', { cls: 'border-t border-gray-100 align-top' }, [
+                        cell(x.created_at ? fmtDateTime(x.created_at) : '', 'whitespace-nowrap text-gray-600'),
+                        cell(name),
+                        cell(x.phone_number || '', 'whitespace-nowrap tabular-nums text-gray-600'),
+                        cell(x.medication_name || '', 'font-medium text-gray-900'),
+                        cell(rxChip(x.status)),
+                        cell(x.collection_at ? fmtDateTime(x.collection_at) : '', 'whitespace-nowrap text-gray-600'),
+                        cell(x.reviewed_at ? fmtDateTime(x.reviewed_at) : '', 'whitespace-nowrap text-gray-600'),
+                        cell(x.rejection_reason || '', 'text-gray-600')
+                    ]));
+                });
+            }
+
+            // ---------------- patient file drawer ----------------
+            function infoRow(label, node) {
+                return el('div', { cls: 'border-b border-gray-100 py-3' }, [
+                    el('dt', { cls: 'text-xs font-medium text-gray-500', text: label }),
+                    el('dd', { cls: 'mt-0.5 break-words text-sm text-gray-900' }, [node])
+                ]);
+            }
+            function plain(text) { return el('span', { text: text }); }
+
+            function renderDrawer(p, history, prescriptions) {
+                $('drawer-title').textContent = p.patient_name;
+                var body = $('drawer-body');
+                clear(body);
+
+                var idShown = false;
+                var idText = el('span', { cls: 'font-mono tabular-nums', text: maskId(p.id_number) });
+                var idNode = el('span', {}, [idText]);
+                if (p.id_number) {
+                    var toggle = el('button', {
+                        cls: 'ml-3 text-xs font-semibold text-medical-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500',
+                        text: 'Show', attrs: { type: 'button' }
+                    });
+                    toggle.addEventListener('click', function () {
+                        idShown = !idShown;
+                        idText.textContent = idShown ? p.id_number : maskId(p.id_number);
+                        toggle.textContent = idShown ? 'Hide' : 'Show';
+                    });
+                    idNode.appendChild(toggle);
+                }
+
+                var dl = el('dl', {}, [
+                    infoRow('Cellphone', plain(p.phone_number || '')),
+                    infoRow('ID number', idNode),
+                    infoRow('Date of birth', plain(p.dob ? fmtYmd(p.dob) : 'Not on file')),
+                    infoRow('Email', plain(p.email || 'Not given')),
+                    infoRow('Chronic conditions', plain(p.chronic_illness || 'Not provided')),
+                    infoRow('Consent', plain(p.consent ? 'Given' + (p.consent_at ? ' on ' + fmtYmd(String(p.consent_at).slice(0, 10)) : '') : 'Not recorded')),
+                    infoRow('Registered', plain(p.created_at ? fmtYmd(String(p.created_at).slice(0, 10)) : ''))
+                ]);
+                body.appendChild(dl);
+
+                body.appendChild(el('h3', { cls: 'mt-6 font-bold text-medical-900', text: 'Prescriptions' }));
+                if (!prescriptions.length) {
+                    body.appendChild(el('p', { cls: 'mt-2 text-sm text-gray-500', text: 'No prescriptions.' }));
+                } else {
+                    var rl = el('ul', { cls: 'mt-2' });
+                    prescriptions.forEach(function (x) {
+                        rl.appendChild(el('li', { cls: 'border-b border-gray-100 py-3 last:border-0' }, [
+                            el('div', { cls: 'flex items-center justify-between gap-3' }, [
+                                el('span', { cls: 'text-sm font-semibold text-gray-900', text: x.medication_name }),
+                                rxChip(x.status)
+                            ]),
+                            el('p', { cls: 'text-xs text-gray-500', text: 'Received ' + (x.created_at ? fmtDateTime(x.created_at) : '') }),
+                            x.collection_at ? el('p', { cls: 'text-xs text-gray-600', text: 'Collection: ' + fmtDateTime(x.collection_at) }) : null,
+                            x.reviewed_at ? el('p', { cls: 'text-xs text-gray-600', text: 'Reviewed: ' + fmtDateTime(x.reviewed_at) }) : null,
+                            x.rejection_reason ? el('p', { cls: 'mt-1 text-xs text-red-700', text: 'Reason: ' + x.rejection_reason }) : null,
+                            el('p', { cls: 'mt-1 text-xs' }, [fileNode(x.prescription_file)])
+                        ]));
+                    });
+                    body.appendChild(rl);
+                }
+
+                body.appendChild(el('h3', { cls: 'mt-6 font-bold text-medical-900', text: 'Booking history' }));
+                if (!history.length) {
+                    body.appendChild(el('p', { cls: 'mt-2 text-sm text-gray-500', text: 'No bookings yet.' }));
+                    return;
+                }
+                var ul = el('ul', { cls: 'mt-2' });
+                history.forEach(function (h) {
+                    ul.appendChild(el('li', { cls: 'border-b border-gray-100 py-3 last:border-0' }, [
+                        el('div', { cls: 'flex items-center justify-between gap-3' }, [
+                            el('span', { cls: 'text-sm font-semibold text-gray-900', text: fmtDateTime(h.chosen_slot) }),
+                            chip(h.status)
+                        ]),
+                        el('p', { cls: 'text-xs text-gray-500', text: h.doctor }),
+                        h.symptoms ? el('p', { cls: 'mt-1 text-xs text-gray-600', text: h.symptoms }) : null
+                    ]));
+                });
+                body.appendChild(ul);
+            }
+
+            function openPatient(id) {
+                call('admin_patient_detail', { p_patient_id: id }).then(function (r) {
+                    if (!r || r.ok !== 'yes') { throw new Error('unexpected reply'); }
+                    renderDrawer(r.patient, r.history || [], r.prescriptions || []);
+                    $('drawer-backdrop').hidden = false;
+                    $('drawer').hidden = false;
+                    $('drawer-close').focus();
+                }).catch(handleErr);
+            }
+            function closeDrawer() {
+                $('drawer').hidden = true;
+                $('drawer-backdrop').hidden = true;
+            }
+
+            // ---------------- sign in / out ----------------
+            function signOut() {
+                var token = state.token;
+                if (token) { rpc('admin_logout', { p_token: token }).catch(function () {}); }
+                dropSession();
+                showLogin('You have signed out.');
+            }
+
+            $('login-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                var problem = keyProblem();
+                if (problem) { setLoginMsg(problem); return; }
+
+                var user = $('login-user').value.trim();
+                var passEl = $('login-pass');
+                if (!user || !passEl.value) { setLoginMsg('Enter your username and password.'); return; }
+
+                $('login-btn').disabled = true;
+                setLoginMsg('Signing in…', true);
+
+                rpc('admin_login', { p_username: user, p_password: passEl.value }).then(function (r) {
+                    if (r && r.ok === 'yes' && r.token) {
+                        state.token = r.token;
+                        state.user = r.username || user;
+                        saveSession();
+                        setLoginMsg('');
+                        showApp();
+                    } else if (r && r.ok === 'denied') {
+                        setLoginMsg('Wrong username or password.');
+                    } else {
+                        setLoginMsg('Something went wrong. Try again.');
+                    }
+                }).catch(function (err) {
+                    setLoginMsg(explain(err));
+                }).then(function () {
+                    passEl.value = '';                // never keep the password around
+                    $('login-btn').disabled = false;
+                });
+            });
+
+            TABS.forEach(function (t) { $('tab-' + t).addEventListener('click', function () { selectTab(t); }); });
+            $('refresh').addEventListener('click', refreshActive);
+            $('signout').addEventListener('click', signOut);
+            ['f-from', 'f-to', 'f-status', 'f-doctor'].forEach(function (id) { $(id).addEventListener('change', loadBookings); });
+            $('f-search').addEventListener('input', renderBookings);
+            $('export-csv').addEventListener('click', exportCsv);
+            $('rx-status').addEventListener('change', loadPrescriptions);
+            $('rx-search').addEventListener('input', renderPrescriptions);
+            $('p-form').addEventListener('submit', function (e) { e.preventDefault(); loadPatients(); });
+            $('drawer-close').addEventListener('click', closeDrawer);
+            $('drawer-backdrop').addEventListener('click', closeDrawer);
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDrawer(); } });
+
+            // ---------------- start ----------------
+            var problem = keyProblem();
+            if (problem) {
+                $('setup-notice').textContent = problem;
+                $('setup-notice').hidden = false;
+                showLogin();
+                return;
+            }
+            if (loadSession()) {
+                call('admin_overview').then(function (r) {
+                    if (r && r.ok === 'yes') { showApp(); } else { showLogin(); }
+                }).catch(function (err) {
+                    if (String((err && err.message) || err) !== 'denied') { showLogin(explain(err)); }
+                });
+            } else {
+                showLogin();
+            }
+        })();
+    </script>
+</body>
+</html>

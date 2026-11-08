@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Online | Lumina Health Clinic</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        medical: { 50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 500: '#14b8a6', 600: '#0d9488', 800: '#115e59', 900: '#134e4a' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Tailwind's display classes (grid, flex) would otherwise override the hidden attribute */
+        [hidden] { display: none !important; }
+        @media (prefers-reduced-motion: no-preference) {
+            @view-transition { navigation: auto; }
+            header { view-transition-name: site-header; }
+            .step-in { animation: stepIn .28s ease-out both; }
+            .step-in.back { animation-name: stepInBack; }
+            .reveal { animation: reveal .22s ease-out both; }
+        }
+        @keyframes stepIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+        @keyframes stepInBack { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+        @keyframes reveal { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { html.scroll-smooth { scroll-behavior: auto; } }
+
+        .input {
+            width: 100%; border: 1px solid #d1d5db; border-radius: .6rem; background: #fff;
+            padding: .7rem .85rem; font-size: 1rem; color: #111827; transition: border-color .15s, box-shadow .15s;
+        }
+        .input:focus { outline: none; border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20,184,166,.2); }
+        .input[aria-invalid="true"] { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,.12); }
+        .input[readonly] { background: #f9fafb; color: #374151; }
+        .label { display: block; font-weight: 600; font-size: .9rem; color: #1f2937; margin-bottom: .35rem; }
+        .req { color: #dc2626; margin-left: .15rem; }
+        .hint { font-size: .8rem; color: #6b7280; margin-top: .3rem; }
+        .err { font-size: .82rem; color: #b91c1c; margin-top: .35rem; display: flex; gap: .35rem; align-items: flex-start; }
+        .err:empty { display: none; }
+
+        /* radio cards */
+        .choice { position: relative; display: flex; align-items: center; gap: .65rem; cursor: pointer;
+                  border: 1px solid #d1d5db; border-radius: .6rem; background: #fff; padding: .75rem .9rem;
+                  transition: border-color .15s, background .15s, box-shadow .15s; }
+        .choice:hover { border-color: #5eead4; }
+        .choice input { position: absolute; opacity: 0; pointer-events: none; }
+        .choice .dot { width: 1.1rem; height: 1.1rem; border-radius: 999px; border: 2px solid #9ca3af; flex: none; transition: all .15s; }
+        .choice:has(input:checked) { border-color: #14b8a6; background: #f0fdfa; box-shadow: 0 0 0 1px #14b8a6 inset; }
+        .choice:has(input:checked) .dot { border-color: #0d9488; border-width: 5px; }
+        .choice:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(20,184,166,.35); }
+        .group-invalid .choice { border-color: #fca5a5; }
+
+        /* pick buttons (dates, doctors, times) */
+        .pick { border: 1px solid #d1d5db; background: #fff; border-radius: .6rem; transition: all .15s; }
+        .pick:hover:not(:disabled) { border-color: #5eead4; }
+        .pick[aria-pressed="true"] { border-color: #14b8a6; background: #14b8a6; color: #fff; box-shadow: 0 4px 12px rgba(20,184,166,.3); }
+        .pick[aria-pressed="true"] .muted { color: #ccfbf1; }
+        .pick:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(20,184,166,.35); }
+        .doc-card[aria-pressed="true"] { background: #f0fdfa; color: inherit; box-shadow: 0 0 0 1px #14b8a6 inset; }
+        .doc-card[aria-pressed="true"] .muted { color: #0f766e; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { scrollbar-width: none; }
+        .skeleton { background: linear-gradient(90deg,#f3f4f6 25%,#e5e7eb 37%,#f3f4f6 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: .6rem; }
+        @keyframes shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased flex flex-col min-h-screen">
+
+    <!-- Navigation (same as the main page) -->
+    <header class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="index.html" class="flex-shrink-0 flex items-center gap-2">
+                    <div class="w-10 h-10 bg-medical-500 rounded-lg flex items-center justify-center text-white shadow-md">
+                        <i class="fa-solid fa-notes-medical text-xl"></i>
+                    </div>
+                    <span class="font-bold text-2xl text-medical-900 tracking-tight">Lumina<span class="text-medical-500">Health</span></span>
+                </a>
+                <nav class="hidden md:flex space-x-8 items-center">
+                    <a href="index.html" class="text-gray-600 hover:text-medical-600 font-medium transition-colors">Home</a>
+                    <a href="index.html?to=services" class="text-gray-600 hover:text-medical-600 font-medium transition-colors">Services</a>
+                    <a href="doctors.html" class="text-gray-600 hover:text-medical-600 font-medium transition-colors">Our Doctors</a>
+                    <a href="book.html" class="text-medical-600 font-semibold" aria-current="page">Book Online</a>
+                    <a href="#contact" class="text-gray-600 hover:text-medical-600 font-medium transition-colors">Contact</a>
+                </nav>
+                <div class="md:hidden flex items-center">
+                    <button id="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu"
+                            class="text-gray-600 hover:text-medical-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500 rounded-lg px-1">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" hidden class="md:hidden border-t border-gray-100 bg-white shadow-sm">
+            <nav class="max-w-7xl mx-auto px-4 py-2 sm:px-6" aria-label="Mobile">
+                <a href="index.html" class="block border-b border-gray-100 py-3 font-medium text-gray-700 hover:text-medical-600">Home</a>
+                <a href="index.html?to=services" class="block border-b border-gray-100 py-3 font-medium text-gray-700 hover:text-medical-600">Services</a>
+                <a href="doctors.html" class="block border-b border-gray-100 py-3 font-medium text-gray-700 hover:text-medical-600">Our Doctors</a>
+                <a href="book.html" class="block border-b border-gray-100 py-3 font-semibold text-medical-600">Book Online</a>
+                <a href="#contact" class="block py-3 font-medium text-gray-700 hover:text-medical-600">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+
+            <div id="intro" class="mb-6">
+                <h1 class="text-3xl sm:text-4xl font-extrabold text-medical-900 tracking-tight">Book an appointment</h1>
+                <p class="mt-2 text-gray-600">Takes about 3 minutes. Fields marked <span class="text-red-600 font-semibold">*</span> are required.
+                    Prefer to chat? <a href="index.html" class="text-medical-600 font-semibold hover:underline">Use our chat assistant</a>.</p>
+            </div>
+
+            <!-- Progress -->
+            <div id="progress" class="mb-6" aria-live="polite">
+                <div class="flex items-center justify-between text-sm mb-2">
+                    <span class="font-semibold text-medical-900" id="progress-label">Step 1 of 6 · Appointment</span>
+                    <span class="text-gray-500" id="progress-pct">0%</span>
+                </div>
+                <div class="h-2 rounded-full bg-gray-200 overflow-hidden" role="progressbar" aria-label="Form progress" aria-valuemin="0" aria-valuemax="6" aria-valuenow="1" id="progress-bar">
+                    <div id="progress-fill" class="h-full bg-medical-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <ol id="stepper" class="hidden sm:grid grid-cols-6 gap-2 mt-3 text-xs font-medium text-gray-400"></ol>
+            </div>
+
+            <form id="booking-form" novalidate class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                <!-- spam trap: hidden from people, bots fill it in -->
+                <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden">
+                    <label for="website">Leave this empty</label>
+                    <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div id="form-alert" role="alert" class="hidden mx-5 sm:mx-8 mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"></div>
+
+                <!-- STEP 1: appointment -->
+                <section data-step="1" class="p-5 sm:p-8" aria-labelledby="h-step1">
+                    <h2 id="h-step1" tabindex="-1" class="text-xl font-bold text-gray-900 focus:outline-none">When would you like to come in?</h2>
+                    <p class="text-sm text-gray-500 mt-1">Pick a day, then a doctor and a time. Appointments are 30 minutes.</p>
+
+                    <div class="mt-6">
+                        <span class="label" id="lbl-date">Day<span class="req">*</span></span>
+                        <div id="date-strip" class="flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1" role="group" aria-labelledby="lbl-date"></div>
+                        <div class="mt-3 flex items-center gap-2 text-sm">
+                            <label for="other-date" class="text-gray-600">Or choose another date:</label>
+                            <input type="date" id="other-date" class="input !w-auto !py-1.5 text-sm">
+                        </div>
+                        <div class="err" id="date-error"></div>
+                    </div>
+
+                    <div class="mt-7" id="doctor-block" hidden>
+                        <span class="label" id="lbl-doctor">Doctor<span class="req">*</span></span>
+                        <div id="doctor-list" class="grid sm:grid-cols-2 gap-3" role="group" aria-labelledby="lbl-doctor"></div>
+                        <div class="err" id="doctor-error"></div>
+                    </div>
+
+                    <div class="mt-7" id="time-block" hidden>
+                        <span class="label" id="lbl-time">Time<span class="req">*</span></span>
+                        <div id="time-list" role="group" aria-labelledby="lbl-time"></div>
+                        <div class="err" id="time-error"></div>
+                    </div>
+                </section>
+
+                <!-- STEP 2: about you -->
+                <section data-step="2" class="p-5 sm:p-8" hidden aria-labelledby="h-step2">
+                    <h2 id="h-step2" tabindex="-1" class="text-xl font-bold text-gray-900 focus:outline-none">About you</h2>
+                    <p class="text-sm text-gray-500 mt-1">As it appears on your ID or passport.</p>
+
+                    <div class="mt-6 grid sm:grid-cols-2 gap-5">
+                        <div>
+                            <label class="label" for="first_name">First name<span class="req">*</span></label>
+                            <input class="input" id="first_name" name="first_name" autocomplete="given-name" maxlength="60" aria-describedby="first_name-error">
+                            <div class="err" id="first_name-error"></div>
+                        </div>
+                        <div>
+                            <label class="label" for="surname">Surname<span class="req">*</span></label>
+                            <input class="input" id="surname" name="surname" autocomplete="family-name" maxlength="60" aria-describedby="surname-error">
+                            <div class="err" id="surname-error"></div>
+                        </div>
+                    </div>
+
+                    <fieldset class="mt-6" id="id_type-group" aria-describedby="id_type-error">
+                        <legend class="label">Identification<span class="req">*</span></legend>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="choice"><input type="radio" name="id_type" value="sa_id"><span class="dot"></span><span>South African ID</span></label>
+                            <label class="choice"><input type="radio" name="id_type" value="passport"><span class="dot"></span><span>Passport</span></label>
+                        </div>
+                        <div class="err" id="id_type-error"></div>
+                    </fieldset>
+
+                    <div class="mt-5 reveal" id="sa-id-block" hidden>
+                        <label class="label" for="id_number">ID number<span class="req">*</span></label>
+                        <input class="input tabular-nums tracking-wide" id="id_number" name="id_number" inputmode="numeric" maxlength="15" placeholder="13 digits" aria-describedby="id_number-hint id_number-error">
+                        <p class="hint" id="id_number-hint">We read your date of birth from your ID number.</p>
+                        <div class="err" id="id_number-error"></div>
+                    </div>
+
+                    <div class="mt-5 grid sm:grid-cols-2 gap-5 reveal" id="passport-block" hidden>
+                        <div>
+                            <label class="label" for="passport_number">Passport number<span class="req">*</span></label>
+                            <input class="input uppercase" id="passport_number" name="passport_number" maxlength="20" autocomplete="off" aria-describedby="passport_number-error">
+                            <div class="err" id="passport_number-error"></div>
+                        </div>
+                        <div>
+                            <label class="label" for="dob">Date of birth<span class="req">*</span></label>
+                            <input class="input" type="date" id="dob" name="dob" autocomplete="bday" aria-describedby="dob-error">
+                            <div class="err" id="dob-error"></div>
+                        </div>
+                    </div>
+
+                    <fieldset class="mt-6" id="gender-group" aria-describedby="gender-error">
+                        <legend class="label">Gender<span class="req">*</span></legend>
+                        <div class="grid sm:grid-cols-3 gap-3">
+                            <label class="choice"><input type="radio" name="gender" value="male"><span class="dot"></span><span>Male</span></label>
+                            <label class="choice"><input type="radio" name="gender" value="female"><span class="dot"></span><span>Female</span></label>
+                            <label class="choice"><input type="radio" name="gender" value="other"><span class="dot"></span><span>Other / prefer not to say</span></label>
+                        </div>
+                        <div class="err" id="gender-error"></div>
+                    </fieldset>
+                </section>
+
+                <!-- STEP 3: contact -->
+                <section data-step="3" class="p-5 sm:p-8" hidden aria-labelledby="h-step3">
+                    <h2 id="h-step3" tabindex="-1" class="text-xl font-bold text-gray-900 focus:outline-none">How can we reach you?</h2>
+                    <p class="text-sm text-gray-500 mt-1">We send appointment reminders to this cellphone number on WhatsApp.</p>
+
+                    <div class="mt-6 grid sm:grid-cols-2 gap-5">
+                        <div>
+                            <label class="label" for="phone_number">Cellphone number<span class="req">*</span></label>
+                            <input class="input tabular-nums" type="tel" id="phone_number" name="phone_number" autocomplete="tel" placeholder="082 123 4567" aria-describedby="phone_number-hint phone_number-error">
+                            <p class="hint" id="phone_number-hint">Not South African? Start with + and your country code.</p>
+                            <div class="err" id="phone_number-error"></div>
+                        </div>
+                        <div>
+                            <label class="label" for="email">Email <span class="font-normal text-gray-500">(optional)</span></label>
+                            <input class="input" type="email" id="email" name="email" autocomplete="email" placeholder="name@example.com" aria-describedby="email-error">
+                            <div class="err" id="email-error"></div>
+                        </div>
+                    </div>
+
+                    <h3 class="mt-8 font-semibold text-gray-900">Residential address</h3>
+                    <div class="mt-3">
+                        <label class="label" for="street">Street address<span class="req">*</span></label>
+                        <input class="input" id="street" name="street" autocomplete="street-address" maxlength="150" placeholder="12 Main Road, Rondebosch" aria-describedby="street-error">
+                        <div class="err" id="street-error"></div>
+                    </div>
+                    <div class="mt-5 grid sm:grid-cols-3 gap-5">
+                        <div>
+                            <label class="label" for="city">City or town<span class="req">*</span></label>
+                            <input class="input" id="city" name="city" autocomplete="address-level2" maxlength="60" aria-describedby="city-error">
+                            <div class="err" id="city-error"></div>
+                        </div>
+                        <div>
+                            <label class="label" for="province">Province<span class="req">*</span></label>
+                            <select class="input" id="province" name="province" autocomplete="address-level1" aria-describedby="province-error">
+                                <option value="">Choose…</option>
+                                <option>Eastern Cape</option><option>Free State</option><option>Gauteng</option>
+                                <option>KwaZulu-Natal</option><option>Limpopo</option><option>Mpumalanga</option>
+                                <option>North West</option><option>Northern Cape</option><option>Western Cape</option>
+                            </select>
+                            <div class="err" id="province-error"></div>
+                        </div>
+                        <div>
+                            <label class="label" for="postal_code">Postal code<span class="req">*</span></label>
+                            <input class="input tabular-nums" id="postal_code" name="postal_code" inputmode="numeric" maxlength="4" autocomplete="postal-code" aria-describedby="postal_code-error">
+                            <div class="err" id="postal_code-error"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- STEP 4: medical aid -->
+                <section data-step="4" class="p-5 sm:p-8" hidden aria-labelledby="h-step4">
+                    <h2 id="h-step4" tabindex="-1" class="text-xl font-bold text-gray-900 focus:outline-none">Medical aid</h2>
+                    <p class="text-sm text-gray-500 mt-1">So we can claim from your scheme. The details are on your medical aid card.</p>
+
+                    <fieldset class="mt-6" id="payment_method-group" aria-describedby="payment_method-error">
+                        <legend class="label">Do you have medical aid?<span class="req">*</span></legend>
+                        <div class="grid sm:grid-cols-2 gap-3">
+                            <label class="choice"><input type="radio" name="payment_method" value="medical_aid"><span class="dot"></span><span>Yes</span></label>
+                            <label class="choice"><input type="radio" name="payment_method" value="cash"><span class="dot"></span><span>No, I'll pay myself (cash or card)</span></label>
+                        </div>
+                        <div class="err" id="payment_method-error"></div>
+                    </fieldset>
+
+                    <div id="aid-block" class="reveal" hidden>
+                        <div class="mt-6 grid sm:grid-cols-2 gap-5">
+                            <div>
+                                <label class="label" for="medical_aid_name">Medical aid scheme<span class="req">*</span></label>
+                                <input class="input" id="medical_aid_name" name="medical_aid_name" list="schemes" maxlength="80" placeholder="e.g. Discovery Health" aria-describedby="medical_aid_name-error">
+                                <datalist id="schemes">
+                                    <option>Discovery Health</option><option>Bonitas</option><option>Momentum Health</option>
+                                    <option>Medshield</option><option>Fedhealth</option><option>Bestmed</option>
+                                    <option>GEMS</option><option>Medihelp</option><option>Profmed</option>
+                                    <option>Polmed</option><option>Sizwe Hosmed</option><option>KeyHealth</option>
+                                </datalist>
+                                <div class="err" id="medical_aid_name-error"></div>
+                            </div>
+                            <div>
+                                <label class="label" for="medical_aid_plan">Plan or option<span class="req">*</span></label>
+                                <input class="input" id="medical_aid_plan" name="medical_aid_plan" maxlength="80" placeholder="e.g. Classic Saver" aria-describedby="medical_aid_plan-error">
+                                <div class="err" id="medical_aid_plan-error"></div>
+                            </div>
+                            <div>
+                                <label class="label" for="medical_aid_number">Membership number<span class="req">*</span></label>
+                                <input class="input tabular-nums" id="medical_aid_number" name="medical_aid_number" maxlength="30" aria-describedby="medical_aid_number-error">
+                                <div class="err" id="medical_aid_number-error"></div>
+                            </div>
+                        </div>
+
+                        <fieldset class="mt-6" id="is_main_member-group" aria-describedby="is_main_member-error">
+                            <legend class="label">Are you the main member?<span class="req">*</span></legend>
+                            <div class="grid sm:grid-cols-2 gap-3">
+                                <label class="choice"><input type="radio" name="is_main_member" value="yes"><span class="dot"></span><span>Yes, it's my policy</span></label>
+                                <label class="choice"><input type="radio" name="is_main_member" value="no"><span class="dot"></span><span>No, I'm a dependant</span></label>
+                            </div>
+                            <div class="err" id="is_main_member-error"></div>
+                        </fieldset>
+
+                        <div id="dependant-block" class="mt-6 rounded-xl bg-gray-50 border border-gray-100 p-4 sm:p-5 reveal" hidden>
+                            <p class="text-sm text-gray-600 mb-4">Details of the person whose policy it is.</p>
+                            <div class="grid sm:grid-cols-2 gap-5">
+                                <div>
+                                    <label class="label" for="main_member_name">Main member's full name<span class="req">*</span></label>
+                                    <input class="input" id="main_member_name" name="main_member_name" maxlength="120" aria-describedby="main_member_name-error">
+                                    <div class="err" id="main_member_name-error"></div>
+                                </div>
+                                <div>
+                                    <label class="label" for="main_member_id">Main member's ID or passport number<span class="req">*</span></label>
+                                    <input class="input uppercase tabular-nums" id="main_member_id" name="main_member_id" maxlength="20" aria-describedby="main_member_id-error">
+                                    <div class="err" id="main_member_id-error"></div>
+                                </div>
+                                <div>
+                                    <label class="label" for="dependant_code">Your dependant code<span class="req">*</span></label>
+                                    <input class="input tabular-nums" id="dependant_code" name="dependant_code" inputmode="numeric" maxlength="2" placeholder="e.g. 01" aria-describedby="dependant_code-hint dependant_code-error">
+                                    <p class="hint" id="dependant_code-hint">Two digits, shown next to your name on the card.</p>
+                                    <div class="err" id="dependant_code-error"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- STEP 5: health -->
+                <section data-step="5" class="p-5 sm:p-8" hidden aria-labelledby="h-step5">
+                    <h2 id="h-step5" tabindex="-1" class="text-xl font-bold text-gray-900 focus:outline-none">Your health</h2>
+                    <p class="text-sm text-gray-500 mt-1">Only your doctor and our reception team see this.</p>
+
+                    <div class="mt-6">
+                        <label class="label" for="reason">Reason for your visit<span class="req">*</span></label>
+                        <textarea class="input" id="reason" name="reason" rows="3" maxlength="500" placeholder="e.g. Sore throat and fever for 3 days" aria-describedby="reason-count reason-error"></textarea>
+                        <div class="flex justify-between">
+                            <div class="err" id="reason-error"></div>
+                            <p class="hint ml-auto tabular-nums" id="reason-count">0 / 500</p>
+                        </div>
+                    </div>
+
+                    <fieldset class="mt-6" id="has_chronic-group" aria-describedby="has_chronic-error">
+                        <legend class="label">Do you have any chronic conditions?<span class="req">*</span></legend>
+                        <div class="grid sm:grid-cols-2 gap-3">
+                            <label class="choice"><input type="radio" name="has_chronic" value="yes"><span class="dot"></span><span>Yes</span></label>
+                            <label class="choice"><input type="radio" name="has_chronic" value="no"><span class="dot"></span><span>No</span></label>
+                        </div>
+                        <div class="err" id="has_chronic-error"></div>
+                    </fieldset>
+
+                    <div class="mt-5 reveal" id="chronic-block" hidden>
+                        <label class="label" for="chronic_illness">Which conditions?<span class="req">*</span></label>
+                        <textarea class="input" id="chronic_illness" name="chronic_illness" rows="2" maxlength="300" placeholder="e.g. Type 2 diabetes, hypertension" aria-describedby="chronic_illness-error"></textarea>
+                        <div class="err" id="chronic_illness-error"></div>
+                    </div>
+
+                    <div class="mt-6 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                        <p>In a medical emergency, don't book online. Call <a href="tel:10177" class="font-semibold underline">10177</a> or go to your nearest emergency room.</p>
+                    </div>
+                </section>
+
+                <!-- STEP 6: review -->
+                <section data-step="6" class="p-5 sm:p-8" hidden aria-labelledby="h-step6">
+                    <h2 id="h-step6" tabindex="-1" class="text-xl font-bold text-gray-900 focus:outline-none">Check and confirm</h2>
+                    <p class="text-sm text-gray-500 mt-1">Make sure everything is right before you send it.</p>
+
+                    <div id="review" class="mt-6 space-y-4"></div>
+
+                    <div class="mt-6">
+                        <label class="flex gap-3 items-start cursor-pointer rounded-xl border border-gray-200 p-4" id="consent-box">
+                            <input type="checkbox" id="consent" name="consent" class="mt-1 h-5 w-5 accent-teal-600 flex-none" aria-describedby="consent-error">
+                            <span class="text-sm text-gray-700">I consent to Lumina Health collecting and processing my personal information, including my ID number,
+                                medical aid and health details, to book my appointment, prepare my doctor and send me reminders, as required by the
+                                Protection of Personal Information Act (POPIA). My information is used only for clinic administration and my care.<span class="req">*</span></span>
+                        </label>
+                        <div class="err" id="consent-error"></div>
+                    </div>
+                </section>
+
+                <!-- DONE -->
+                <section data-step="7" class="p-6 sm:p-10 text-center" hidden aria-labelledby="h-done">
+                    <div class="mx-auto w-16 h-16 rounded-full bg-medical-100 text-medical-600 flex items-center justify-center text-3xl">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <h2 id="h-done" tabindex="-1" class="mt-5 text-2xl font-bold text-gray-900 focus:outline-none">Request received</h2>
+                    <p class="mt-2 text-gray-600">Your time is held. Reception will confirm your appointment, usually within one working day.</p>
+                    <dl class="mt-6 mx-auto max-w-sm text-left rounded-xl border border-gray-200 divide-y divide-gray-100 text-sm">
+                        <div class="flex justify-between gap-4 px-4 py-3"><dt class="text-gray-500">Reference</dt><dd class="font-semibold tabular-nums tracking-wide" id="done-ref"></dd></div>
+                        <div class="flex justify-between gap-4 px-4 py-3"><dt class="text-gray-500">Doctor</dt><dd class="font-semibold text-right" id="done-doctor"></dd></div>
+                        <div class="flex justify-between gap-4 px-4 py-3"><dt class="text-gray-500">When</dt><dd class="font-semibold text-right" id="done-when"></dd></div>
+                    </dl>
+                    <p class="mt-6 text-sm text-gray-500">Need to change something? Call reception on <a href="tel:0215550198" class="text-medical-600 font-semibold">021 555 0198</a> and quote your reference.</p>
+                    <a href="index.html" class="mt-8 inline-flex items-center gap-2 bg-medical-500 hover:bg-medical-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg shadow-medical-500/30 transition-colors">
+                        <i class="fa-solid fa-house"></i> Back to home
+                    </a>
+                </section>
+
+                <!-- Buttons -->
+                <div id="nav-bar" class="flex items-center justify-between gap-3 border-t border-gray-100 px-5 sm:px-8 py-4 bg-gray-50/60 rounded-b-2xl">
+                    <button type="button" id="back-btn" class="invisible inline-flex items-center gap-2 rounded-full px-5 py-2.5 font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500">
+                        <i class="fa-solid fa-arrow-left text-sm"></i> Back
+                    </button>
+                    <button type="submit" id="next-btn" class="inline-flex items-center gap-2 bg-medical-500 hover:bg-medical-600 disabled:opacity-60 disabled:cursor-wait text-white px-7 py-3 rounded-full font-semibold shadow-lg shadow-medical-500/30 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-medical-500">
+                        <span id="next-label">Continue</span> <i id="next-icon" class="fa-solid fa-arrow-right text-sm"></i>
+                    </button>
+                </div>
+            </form>
+
+            <p class="mt-6 text-center text-xs text-gray-500"><i class="fa-solid fa-lock mr-1"></i> Your details are sent securely and stored only in our clinic system.</p>
+        </div>
+    </main>
+
+    <footer class="bg-medical-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+                <div class="flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-notes-medical text-medical-500 text-2xl"></i>
+                    <span class="font-bold text-xl tracking-tight">Lumina<span class="text-medical-500">Health</span></span>
+                </div>
+                <p class="text-gray-400 text-sm">Seamless medical care powered by intelligent automation. Patient wellbeing is our top priority.</p>
+            </div>
+            <div>
+                <h4 class="font-bold mb-4 text-lg">Quick Links</h4>
+                <ul class="space-y-2 text-sm text-gray-400">
+                    <li><a href="index.html" class="hover:text-white transition-colors">Home</a></li>
+                    <li><a href="doctors.html" class="hover:text-white transition-colors">Our Doctors</a></li>
+                    <li><a href="book.html" class="hover:text-white transition-colors">Book Online</a></li>
+                </ul>
+            </div>
+            <div id="contact" class="scroll-mt-24">
+                <h4 class="font-bold mb-4 text-lg">Contact</h4>
+                <ul class="space-y-2 text-sm text-gray-400">
+                    <li><i class="fa-solid fa-location-dot mr-2 w-4"></i> 123 Care Avenue, Cape Town</li>
+                    <li><i class="fa-solid fa-phone mr-2 w-4"></i> 021 555 0198</li>
+                    <li><i class="fa-solid fa-envelope mr-2 w-4"></i> hello@luminahealth.co.za</li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-medical-800 text-center text-sm text-gray-500">
+            &copy; 2026 Lumina Health Clinic. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        // ------------------------------------------------------------
+        // Supabase: project URL and PUBLISHABLE key only (never the secret key).
+        // The form can only call the three form_ functions in patch_booking_form.sql.
+        // ------------------------------------------------------------
+        const SUPABASE_URL = 'PASTE_YOUR_SUPABASE_URL';
+        const SUPABASE_PUBLISHABLE_KEY = 'PASTE_YOUR_PUBLISHABLE_KEY';
+        const RECEPTION_PHONE = '021 555 0198';
+
+        (function () {
+            'use strict';
+
+            var STEPS = ['Appointment', 'About you', 'Contact', 'Medical aid', 'Health', 'Confirm'];
+            var LAST = STEPS.length;            // review step
+            var current = 1;
+            var submitting = false, submitted = false, dirty = false, editing = false;
+            var appt = { date: null, doctor: null, slot: null };
+            var loadSeq = 0;
+
+            var $ = function (id) { return document.getElementById(id); };
+            var form = $('booking-form');
+
+            // ---------- small helpers ----------
+            function el(tag, cls, text) {
+                var n = document.createElement(tag);
+                if (cls) { n.className = cls; }
+                if (text !== undefined && text !== null) { n.textContent = text; }
+                return n;
+            }
+            function val(id) { var n = $(id); return n ? n.value.trim() : ''; }
+            function radio(name) { var r = form.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; }
+            function pad(n) { return (n < 10 ? '0' : '') + n; }
+            function isoDate(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+            function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+            function parseIso(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+            function fmtDay(s, opts) { return parseIso(s).toLocaleDateString('en-ZA', opts || { weekday: 'long', day: 'numeric', month: 'long' }); }
+
+            function rpc(name, body) {
+                return fetch(SUPABASE_URL.replace(/\/+$/, '') + '/rest/v1/rpc/' + name, {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {})
+                }).then(function (res) {
+                    if (!res.ok) { throw new Error('HTTP ' + res.status); }
+                    return res.json();
+                });
+            }
+
+            // ---------- South African ID ----------
+            function saIdInfo(raw) {
+                var id = String(raw || '').replace(/[\s-]/g, '');
+                if (!/^\d{13}$/.test(id)) { return { ok: false, reason: 'length' }; }
+                if (id.charAt(10) !== '0' && id.charAt(10) !== '1') { return { ok: false, reason: 'invalid' }; }
+                var sum = 0;
+                for (var k = 0; k < 13; k++) {
+                    var d = +id.charAt(12 - k);
+                    if (k % 2 === 1) { d *= 2; if (d > 9) { d -= 9; } }
+                    sum += d;
+                }
+                if (sum % 10 !== 0) { return { ok: false, reason: 'invalid' }; }
+                var yy = +id.substr(0, 2), mm = +id.substr(2, 2), dd = +id.substr(4, 2);
+                function real(y) { var t = new Date(y, mm - 1, dd); return t.getFullYear() === y && t.getMonth() === mm - 1 && t.getDate() === dd ? t : null; }
+                var dob = real(2000 + yy);
+                if (!dob || dob > new Date()) { dob = real(1900 + yy); }
+                if (!dob) { return { ok: false, reason: 'invalid' }; }
+                return { ok: true, id: id, dob: dob };
+            }
+
+            function normalPhone(raw) {
+                var s = String(raw || '').replace(/[^\d+]/g, '');
+                if (/^0\d{9}$/.test(s)) { return '+27' + s.slice(1); }
+                if (/^27\d{9}$/.test(s)) { return '+' + s; }
+                if (/^[1-9]\d{8}$/.test(s)) { return '+27' + s; }
+                if (/^\+\d{10,15}$/.test(s)) { return s; }
+                return null;
+            }
+
+            // ---------- errors ----------
+            var shown = {};   // fields whose error is visible
+            function setErr(field, msg) {
+                var box = $(field + '-error');
+                if (box) {
+                    box.textContent = '';
+                    if (msg) { box.appendChild(el('i', 'fa-solid fa-circle-exclamation mt-0.5')); box.appendChild(el('span', '', msg)); }
+                }
+                var input = $(field);
+                var group = $(field + '-group');
+                if (input) { input.setAttribute('aria-invalid', msg ? 'true' : 'false'); }
+                if (group) { group.classList.toggle('group-invalid', !!msg); }
+                if (msg) { shown[field] = true; } else { delete shown[field]; }
+            }
+            function clearAlert() { $('form-alert').classList.add('hidden'); $('form-alert').textContent = ''; }
+            function showAlert(msg) { var a = $('form-alert'); a.textContent = msg; a.classList.remove('hidden'); a.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+
+            // ---------- validation per step: returns [[field, message], ...] ----------
+            var rules = {
+                1: function () {
+                    var e = [];
+                    if (!appt.date) { e.push(['date', 'Choose a day.']); }
+                    else if (!appt.doctor) { e.push(['doctor', 'Choose a doctor.']); }
+                    else if (!appt.slot) { e.push(['time', 'Choose a time.']); }
+                    return e;
+                },
+                2: function () {
+                    var e = [];
+                    if (!val('first_name')) { e.push(['first_name', 'Enter your first name.']); }
+                    if (!val('surname')) { e.push(['surname', 'Enter your surname.']); }
+                    var t = radio('id_type');
+                    if (!t) { e.push(['id_type', 'Choose South African ID or passport.']); }
+                    if (t === 'sa_id') {
+                        var info = saIdInfo(val('id_number'));
+                        if (!val('id_number')) { e.push(['id_number', 'Enter your ID number.']); }
+                        else if (!info.ok) { e.push(['id_number', info.reason === 'length' ? 'An ID number has 13 digits.' : "That ID number isn't valid. Check each digit."]); }
+                    }
+                    if (t === 'passport') {
+                        var p = val('passport_number').replace(/[^A-Za-z0-9]/g, '');
+                        if (!p) { e.push(['passport_number', 'Enter your passport number.']); }
+                        else if (p.length < 6) { e.push(['passport_number', 'A passport number has at least 6 letters or digits.']); }
+                        var dob = val('dob');
+                        if (!dob) { e.push(['dob', 'Enter your date of birth.']); }
+                        else if (parseIso(dob) > new Date() || dob < '1900-01-01') { e.push(['dob', 'Check your date of birth.']); }
+                    }
+                    if (!radio('gender')) { e.push(['gender', 'Choose an option.']); }
+                    return e;
+                },
+                3: function () {
+                    var e = [];
+                    if (!val('phone_number')) { e.push(['phone_number', 'Enter your cellphone number.']); }
+                    else if (!normalPhone(val('phone_number'))) { e.push(['phone_number', 'Enter a 10-digit number like 082 123 4567.']); }
+                    if (val('email') && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val('email'))) { e.push(['email', 'Check your email address, or leave it empty.']); }
+                    if (val('street').length < 3) { e.push(['street', 'Enter your street address.']); }
+                    if (val('city').length < 2) { e.push(['city', 'Enter your city or town.']); }
+                    if (!val('province')) { e.push(['province', 'Choose your province.']); }
+                    if (!/^\d{4}$/.test(val('postal_code'))) { e.push(['postal_code', val('postal_code') ? 'A postal code has 4 digits.' : 'Enter your postal code.']); }
+                    return e;
+                },
+                4: function () {
+                    var e = [];
+                    var pay = radio('payment_method');
+                    if (!pay) { e.push(['payment_method', 'Choose an option.']); return e; }
+                    if (pay === 'medical_aid') {
+                        if (val('medical_aid_name').length < 2) { e.push(['medical_aid_name', 'Enter your medical aid scheme.']); }
+                        if (!val('medical_aid_plan')) { e.push(['medical_aid_plan', 'Enter your plan or option.']); }
+                        if (val('medical_aid_number').length < 3) { e.push(['medical_aid_number', 'Enter your membership number.']); }
+                        var main = radio('is_main_member');
+                        if (!main) { e.push(['is_main_member', 'Choose an option.']); }
+                        if (main === 'no') {
+                            if (val('main_member_name').length < 2) { e.push(['main_member_name', "Enter the main member's full name."]); }
+                            var mid = val('main_member_id').replace(/[^A-Za-z0-9]/g, '');
+                            if (mid.length < 6) { e.push(['main_member_id', "Enter the main member's ID or passport number."]); }
+                            var dc = val('dependant_code');
+                            if (!/^\d{2}$/.test(dc)) { e.push(['dependant_code', 'Enter the 2-digit code from your card, e.g. 01.']); }
+                            else if (dc === '00') { e.push(['dependant_code', '00 is the main member. Dependants have 01 or higher.']); }
+                        }
+                    }
+                    return e;
+                },
+                5: function () {
+                    var e = [];
+                    if (val('reason').length < 3) { e.push(['reason', 'Tell us briefly why you are coming in.']); }
+                    var c = radio('has_chronic');
+                    if (!c) { e.push(['has_chronic', 'Choose an option.']); }
+                    if (c === 'yes' && !val('chronic_illness')) { e.push(['chronic_illness', 'List your conditions.']); }
+                    return e;
+                },
+                6: function () {
+                    return $('consent').checked ? [] : [['consent', 'Please give your consent so we can book your appointment.']];
+                }
+            };
+            var FIELD_STEP = {
+                date: 1, doctor: 1, time: 1, slot: 1, doctor_id: 1,
+                first_name: 2, surname: 2, id_type: 2, id_number: 2, passport_number: 2, dob: 2, gender: 2,
+                phone_number: 3, email: 3, street: 3, city: 3, province: 3, postal_code: 3,
+                payment_method: 4, medical_aid_name: 4, medical_aid_plan: 4, medical_aid_number: 4,
+                is_main_member: 4, main_member_name: 4, main_member_id: 4, dependant_code: 4,
+                reason: 5, has_chronic: 5, chronic_illness: 5, consent: 6
+            };
+
+            function stepFields(step) {
+                return Object.keys(FIELD_STEP).filter(function (f) { return FIELD_STEP[f] === step; });
+            }
+
+            function validate(step, focus) {
+                var errs = rules[step]();
+                var bad = {};
+                errs.forEach(function (x) { bad[x[0]] = x[1]; });
+                stepFields(step).forEach(function (f) { setErr(f, bad[f] || ''); });
+                if (errs.length && focus) {
+                    var first = errs[0][0];
+                    var target = $(first) || form.querySelector('#' + first + '-group input') ||
+                                 { date: $('date-strip').querySelector('button'),
+                                   doctor: $('doctor-list').querySelector('button'),
+                                   time: $('time-list').querySelector('button') }[first];
+                    var anchor = $(first + '-group') || $(first) || $(first + '-error');
+                    if (anchor) { anchor.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+                    if (target && target.focus) { setTimeout(function () { target.focus({ preventScroll: true }); }, 250); }
+                }
+                return errs.length === 0;
+            }
+
+            // re-check a field as soon as the person fixes it
+            // only fields already showing an error are updated, so untouched fields stay calm
+            function recheck() {
+                var keys = Object.keys(shown);
+                if (!keys.length) { return; }
+                var bad = {};
+                rules[current]().forEach(function (x) { bad[x[0]] = x[1]; });
+                keys.forEach(function (f) { setErr(f, bad[f] || ''); });
+            }
+            form.addEventListener('input', function (e) { if (e.target.id !== 'website') { dirty = true; } recheck(); });
+            form.addEventListener('change', recheck);
+            form.addEventListener('focusout', function (e) {
+                // after leaving a field that has a value, show its problem (not for empty fields)
+                var f = e.target;
+                if (!f.id || !FIELD_STEP[f.id] || !f.value || !f.value.trim()) { return; }
+                var errs = rules[current]();
+                errs.forEach(function (x) { if (x[0] === f.id) { setErr(f.id, x[1]); } });
+            });
+
+            // ---------- conditional fields ----------
+            function show(id, on) {
+                var n = $(id);
+                if (n.hidden === !on) { return; }
+                n.hidden = !on;
+                if (on) { n.classList.remove('reveal'); void n.offsetWidth; n.classList.add('reveal'); }
+            }
+            function syncConditional() {
+                var t = radio('id_type');
+                show('sa-id-block', t === 'sa_id');
+                show('passport-block', t === 'passport');
+                var pay = radio('payment_method');
+                show('aid-block', pay === 'medical_aid');
+                show('dependant-block', pay === 'medical_aid' && radio('is_main_member') === 'no');
+                show('chronic-block', radio('has_chronic') === 'yes');
+            }
+            form.addEventListener('change', function (e) { if (e.target.type === 'radio') { syncConditional(); } });
+
+            $('id_number').addEventListener('input', function () {
+                var info = saIdInfo(this.value);
+                var hint = $('id_number-hint');
+                if (info.ok) {
+                    hint.innerHTML = '';
+                    hint.appendChild(el('i', 'fa-solid fa-circle-check text-medical-600 mr-1'));
+                    hint.appendChild(document.createTextNode('Valid ID. Date of birth: ' +
+                        info.dob.toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })));
+                } else {
+                    hint.textContent = 'We read your date of birth from your ID number.';
+                }
+            });
+            ['postal_code', 'dependant_code'].forEach(function (id) {
+                $(id).addEventListener('input', function () { this.value = this.value.replace(/\D/g, ''); });
+            });
+            $('reason').addEventListener('input', function () { $('reason-count').textContent = this.value.length + ' / 500'; });
+
+            // ---------- step 1: day, doctor, time ----------
+            var today = new Date(); today.setHours(0, 0, 0, 0);
+            $('other-date').min = isoDate(today);
+            $('other-date').max = isoDate(addDays(today, 60));
+
+            function buildDates() {
+                var strip = $('date-strip');
+                strip.textContent = '';
+                for (var i = 0; i < 14; i++) {
+                    var d = addDays(today, i), iso = isoDate(d);
+                    var b = el('button', 'pick flex-none w-[4.4rem] py-2.5 text-center');
+                    b.type = 'button';
+                    b.dataset.date = iso;
+                    b.setAttribute('aria-pressed', 'false');
+                    b.setAttribute('aria-label', d.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' }));
+                    b.appendChild(el('span', 'block text-xs muted text-gray-500', i === 0 ? 'Today' : d.toLocaleDateString('en-ZA', { weekday: 'short' })));
+                    b.appendChild(el('span', 'block text-lg font-bold leading-tight', String(d.getDate())));
+                    b.appendChild(el('span', 'block text-xs muted text-gray-500', d.toLocaleDateString('en-ZA', { month: 'short' })));
+                    b.addEventListener('click', function () { chooseDate(this.dataset.date); });
+                    strip.appendChild(b);
+                }
+            }
+
+            function pressOnly(container, selector, match) {
+                container.querySelectorAll(selector).forEach(function (b) { b.setAttribute('aria-pressed', match(b) ? 'true' : 'false'); });
+            }
+
+            function chooseDate(iso) {
+                appt.date = iso; appt.doctor = null; appt.slot = null; dirty = true;
+                pressOnly($('date-strip'), 'button', function (b) { return b.dataset.date === iso; });
+                var inStrip = !!$('date-strip').querySelector('[data-date="' + iso + '"]');
+                $('other-date').value = inStrip ? '' : iso;
+                setErr('date', '');
+                $('time-block').hidden = true;
+                loadDoctors();
+            }
+            $('other-date').addEventListener('change', function () {
+                if (!this.value) { return; }
+                if (this.value < this.min || this.value > this.max) { setErr('date', 'Choose a date within the next 60 days.'); return; }
+                chooseDate(this.value);
+            });
+
+            function skeleton(container, n, cls) {
+                container.textContent = '';
+                for (var i = 0; i < n; i++) { container.appendChild(el('div', 'skeleton ' + cls)); }
+            }
+            function emptyState(container, icon, msg, retry) {
+                container.textContent = '';
+                var box = el('div', 'col-span-full rounded-xl border border-dashed border-gray-300 p-5 text-center text-sm text-gray-600');
+                box.appendChild(el('i', 'fa-solid ' + icon + ' text-gray-400 text-xl mb-2 block'));
+                box.appendChild(el('p', '', msg));
+                if (retry) {
+                    var r = el('button', 'mt-3 text-medical-600 font-semibold hover:underline', 'Try again');
+                    r.type = 'button';
+                    r.addEventListener('click', retry);
+                    box.appendChild(r);
+                }
+                container.appendChild(box);
+            }
+
+            function loadDoctors() {
+                var seq = ++loadSeq, list = $('doctor-list');
+                $('doctor-block').hidden = false;
+                skeleton(list, 2, 'h-[4.5rem]');
+                rpc('form_get_available_doctors', { p_date: appt.date }).then(function (r) {
+                    if (seq !== loadSeq) { return; }
+                    var docs = (r && r.doctors) || [];
+                    if (!docs.length) {
+                        emptyState(list, 'fa-calendar-xmark', 'No doctors have free times on ' + fmtDay(appt.date) + '. Please pick another day.');
+                        return;
+                    }
+                    list.textContent = '';
+                    docs.forEach(function (d) {
+                        var b = el('button', 'pick doc-card flex items-center gap-3 p-3.5 text-left w-full');
+                        b.type = 'button';
+                        b.setAttribute('aria-pressed', 'false');
+                        b.dataset.id = d.doctor_id;
+                        var words = d.full_name.replace(/^dr\.?\s+/i, '').split(/\s+/);
+                        var ini = ((words[0] || '').charAt(0) + (words.length > 1 ? words[words.length - 1].charAt(0) : '')).toUpperCase();
+                        b.appendChild(el('span', 'w-11 h-11 flex-none rounded-full bg-medical-100 text-medical-800 font-bold flex items-center justify-center', ini));
+                        var t = el('span', 'min-w-0');
+                        t.appendChild(el('span', 'block font-semibold text-gray-900 truncate', d.full_name));
+                        t.appendChild(el('span', 'block text-sm muted text-gray-500 truncate', d.specialty));
+                        b.appendChild(t);
+                        b.addEventListener('click', function () {
+                            appt.doctor = { id: d.doctor_id, name: d.full_name, specialty: d.specialty };
+                            appt.slot = null;
+                            pressOnly(list, 'button', function (x) { return x.dataset.id === d.doctor_id; });
+                            setErr('doctor', '');
+                            loadTimes();
+                        });
+                        list.appendChild(b);
+                    });
+                    if (docs.length === 1) { list.querySelector('button').click(); }
+                }).catch(function () {
+                    if (seq !== loadSeq) { return; }
+                    emptyState(list, 'fa-wifi', "We couldn't load the doctors. Check your connection, or call reception on " + RECEPTION_PHONE + '.', loadDoctors);
+                });
+            }
+
+            function loadTimes() {
+                var seq = ++loadSeq, box = $('time-list');
+                $('time-block').hidden = false;
+                box.className = 'grid grid-cols-3 sm:grid-cols-5 gap-2';
+                skeleton(box, 10, 'h-11');
+                $('time-block').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                rpc('form_get_available_slots', { p_doctor_id: appt.doctor.id, p_date: appt.date }).then(function (r) {
+                    if (seq !== loadSeq) { return; }
+                    var slots = (r && r.slots) || [];
+                    box.textContent = '';
+                    box.className = 'space-y-4';
+                    if (!slots.length) { emptyState(box, 'fa-clock', appt.doctor.name + ' is fully booked on this day. Pick another doctor or day.'); return; }
+                    var groups = { Morning: [], Afternoon: [] };
+                    slots.forEach(function (s) { (+s.label.slice(0, 2) < 12 ? groups.Morning : groups.Afternoon).push(s); });
+                    Object.keys(groups).forEach(function (g) {
+                        if (!groups[g].length) { return; }
+                        var wrap = el('div');
+                        wrap.appendChild(el('p', 'text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2', g));
+                        var grid = el('div', 'grid grid-cols-3 sm:grid-cols-5 gap-2');
+                        groups[g].forEach(function (s) {
+                            var b = el('button', 'pick py-2.5 font-semibold tabular-nums', s.label);
+                            b.type = 'button';
+                            b.setAttribute('aria-pressed', 'false');
+                            b.dataset.slot = s.slot;
+                            b.addEventListener('click', function () {
+                                appt.slot = { slot: s.slot, label: s.label };
+                                pressOnly(box, 'button', function (x) { return x.dataset.slot === s.slot; });
+                                setErr('time', '');
+                            });
+                            grid.appendChild(b);
+                        });
+                        wrap.appendChild(grid);
+                        box.appendChild(wrap);
+                    });
+                }).catch(function () {
+                    if (seq !== loadSeq) { return; }
+                    emptyState(box, 'fa-wifi', "We couldn't load the times. Check your connection.", loadTimes);
+                });
+            }
+
+            // ---------- moving between steps ----------
+            function buildStepper() {
+                var ol = $('stepper');
+                ol.textContent = '';
+                STEPS.forEach(function (name, i) {
+                    var li = el('li', 'flex flex-col gap-1.5');
+                    li.appendChild(el('span', 'h-1 rounded-full bg-gray-200 transition-colors'));
+                    li.appendChild(el('span', 'truncate', name));
+                    ol.appendChild(li);
+                });
+            }
+            function paintProgress() {
+                var done = current > LAST;
+                var pct = done ? 100 : Math.round((current - 1) / LAST * 100);
+                $('progress-fill').style.width = pct + '%';
+                $('progress-pct').textContent = pct + '%';
+                $('progress-label').textContent = done ? 'Done' : 'Step ' + current + ' of ' + LAST + ' · ' + STEPS[current - 1];
+                $('progress-bar').setAttribute('aria-valuenow', String(Math.min(current, LAST)));
+                Array.prototype.forEach.call($('stepper').children, function (li, i) {
+                    var n = i + 1;
+                    li.firstChild.className = 'h-1 rounded-full transition-colors ' + (n < current ? 'bg-medical-500' : n === current ? 'bg-medical-200' : 'bg-gray-200');
+                    li.lastChild.className = 'truncate ' + (n === current ? 'text-medical-800 font-semibold' : n < current ? 'text-gray-600' : '');
+                });
+            }
+
+            function goTo(step, backwards) {
+                clearAlert();
+                var from = form.querySelector('section[data-step="' + current + '"]');
+                var to = form.querySelector('section[data-step="' + step + '"]');
+                from.hidden = true;
+                to.hidden = false;
+                to.classList.remove('step-in', 'back'); void to.offsetWidth;
+                to.classList.add('step-in'); if (backwards) { to.classList.add('back'); }
+                current = step;
+                if (step === LAST) { buildReview(); }
+                var finished = step > LAST;
+                $('nav-bar').hidden = finished;
+                $('intro').hidden = finished;
+                $('back-btn').classList.toggle('invisible', step === 1);
+                $('next-label').textContent = step === LAST ? 'Send booking request' : editing ? 'Save and review' : 'Continue';
+                $('next-icon').className = step === LAST ? 'fa-solid fa-paper-plane text-sm' : 'fa-solid fa-arrow-right text-sm';
+                paintProgress();
+                $('progress').scrollIntoView({ block: 'start', behavior: 'smooth' });
+                var h = to.querySelector('h2');
+                if (h) { setTimeout(function () { h.focus({ preventScroll: true }); }, 50); }
+            }
+
+            $('back-btn').addEventListener('click', function () { if (current > 1 && !submitting) { goTo(current - 1, true); } });
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (submitting) { return; }
+                if (!validate(current, true)) { return; }
+                if (current === LAST) { send(); return; }
+                // after "Edit" on the review page, Continue goes straight back to the review
+                if (editing) {
+                    for (var s = current + 1; s < LAST; s++) {
+                        if (rules[s]().length) { goTo(s); return; }
+                    }
+                    editing = false;
+                    goTo(LAST);
+                    return;
+                }
+                goTo(current + 1);
+            });
+            // Enter in a text field moves on, like the Continue button (not in text areas)
+            form.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type !== 'checkbox' && e.target.type !== 'radio') {
+                    e.preventDefault();
+                    $('next-btn').click();
+                }
+            });
+
+            // ---------- review ----------
+            function buildReview() {
+                var box = $('review');
+                box.textContent = '';
+                var t = radio('id_type'), pay = radio('payment_method');
+                var idText = t === 'sa_id' ? 'SA ID ' + val('id_number').replace(/\s/g, '') : 'Passport ' + val('passport_number').toUpperCase();
+                var dob = t === 'sa_id' ? (saIdInfo(val('id_number')).dob || null) : (val('dob') ? parseIso(val('dob')) : null);
+                var genderText = { male: 'Male', female: 'Female', other: 'Other / prefer not to say' }[radio('gender')];
+                var sections = [
+                    [1, 'Appointment', [
+                        ['Doctor', appt.doctor ? appt.doctor.name + ' (' + appt.doctor.specialty + ')' : ''],
+                        ['When', appt.date && appt.slot ? fmtDay(appt.date) + ', ' + appt.slot.label : '']]],
+                    [2, 'About you', [
+                        ['Name', val('first_name') + ' ' + val('surname')],
+                        ['ID', idText],
+                        ['Date of birth', dob ? dob.toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' }) : ''],
+                        ['Gender', genderText]]],
+                    [3, 'Contact', [
+                        ['Cellphone', val('phone_number')],
+                        ['Email', val('email') || 'Not given'],
+                        ['Address', [val('street'), val('city'), val('province'), val('postal_code')].join(', ')]]],
+                    [4, 'Medical aid', pay === 'cash' ? [['Payment', 'Paying myself']] : [
+                        ['Scheme', val('medical_aid_name') + ', ' + val('medical_aid_plan')],
+                        ['Membership no.', val('medical_aid_number')],
+                        ['Main member', radio('is_main_member') === 'yes' ? 'Me (dependant code 00)'
+                            : val('main_member_name') + ', ' + val('main_member_id').toUpperCase() + ' (my code ' + val('dependant_code') + ')']]],
+                    [5, 'Health', [
+                        ['Reason', val('reason')],
+                        ['Chronic conditions', radio('has_chronic') === 'yes' ? val('chronic_illness') : 'None']]]
+                ];
+                sections.forEach(function (s) {
+                    var card = el('div', 'rounded-xl border border-gray-200');
+                    var head = el('div', 'flex items-center justify-between px-4 py-2.5 border-b border-gray-100 bg-gray-50 rounded-t-xl');
+                    head.appendChild(el('h3', 'font-semibold text-gray-900 text-sm', s[1]));
+                    var edit = el('button', 'text-sm font-semibold text-medical-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500 rounded', 'Edit');
+                    edit.type = 'button';
+                    edit.setAttribute('aria-label', 'Edit ' + s[1].toLowerCase());
+                    edit.addEventListener('click', function () { editing = true; goTo(s[0], true); });
+                    head.appendChild(edit);
+                    card.appendChild(head);
+                    var dl = el('dl', 'divide-y divide-gray-100 text-sm');
+                    s[2].forEach(function (row) {
+                        var r = el('div', 'grid grid-cols-3 gap-3 px-4 py-2.5');
+                        r.appendChild(el('dt', 'text-gray-500', row[0]));
+                        r.appendChild(el('dd', 'col-span-2 text-gray-900 break-words', row[1]));
+                        dl.appendChild(r);
+                    });
+                    card.appendChild(dl);
+                    box.appendChild(card);
+                });
+            }
+
+            // ---------- send ----------
+            function payload() {
+                var t = radio('id_type'), pay = radio('payment_method'), main = radio('is_main_member') !== 'no';
+                return {
+                    website: $('website').value,
+                    first_name: val('first_name'), surname: val('surname'),
+                    id_type: t,
+                    id_number: t === 'sa_id' ? val('id_number') : '',
+                    passport_number: t === 'passport' ? val('passport_number') : '',
+                    dob: t === 'passport' ? val('dob') : '',
+                    gender: radio('gender'),
+                    phone_number: normalPhone(val('phone_number')) || val('phone_number'),
+                    email: val('email'),
+                    street: val('street'), city: val('city'), province: val('province'), postal_code: val('postal_code'),
+                    payment_method: pay,
+                    medical_aid_name: pay === 'medical_aid' ? val('medical_aid_name') : '',
+                    medical_aid_plan: pay === 'medical_aid' ? val('medical_aid_plan') : '',
+                    medical_aid_number: pay === 'medical_aid' ? val('medical_aid_number') : '',
+                    is_main_member: main,
+                    dependant_code: pay === 'medical_aid' && !main ? val('dependant_code') : '',
+                    main_member_name: pay === 'medical_aid' && !main ? val('main_member_name') : '',
+                    main_member_id: pay === 'medical_aid' && !main ? val('main_member_id') : '',
+                    chronic_illness: radio('has_chronic') === 'yes' ? val('chronic_illness') : '',
+                    reason: val('reason'),
+                    doctor_id: appt.doctor && appt.doctor.id,
+                    slot: appt.slot && appt.slot.slot,
+                    consent: $('consent').checked
+                };
+            }
+
+            function busy(on) {
+                submitting = on;
+                $('next-btn').disabled = on;
+                $('back-btn').disabled = on;
+                $('next-label').textContent = on ? 'Sending…' : 'Send booking request';
+                $('next-icon').className = on ? 'fa-solid fa-spinner fa-spin text-sm' : 'fa-solid fa-paper-plane text-sm';
+            }
+
+            function send() {
+                busy(true);
+                clearAlert();
+                rpc('form_submit_booking', { p_form: payload() }).then(function (r) {
+                    busy(false);
+                    var ok = r && r.ok;
+                    if (ok === 'yes') {
+                        submitted = true;
+                        $('done-ref').textContent = r.reference;
+                        $('done-doctor').textContent = r.doctor_name;
+                        $('done-when').textContent = r.slot_label;
+                        goTo(LAST + 1);
+                    } else if (ok === 'taken') {
+                        appt.slot = null;
+                        editing = true;
+                        goTo(1, true);
+                        loadTimes();
+                        showAlert('Sorry, someone has just booked that time. Please choose another time. Everything else you entered is kept.');
+                    } else if (ok === 'invalid' && r.field && FIELD_STEP[r.field]) {
+                        var step = FIELD_STEP[r.field];
+                        editing = true;
+                        goTo(step, true);
+                        setTimeout(function () { validate(step, true); if (!shown[r.field]) { setErr(r.field, 'Please check this.'); } }, 60);
+                        showAlert('Please check the highlighted field.');
+                    } else if (ok === 'mismatch') {
+                        showAlert("These details don't match our records for this cellphone or ID number. Please call reception on " + RECEPTION_PHONE + ' and we will book for you.');
+                    } else if (ok === 'limit') {
+                        showAlert('You already have booking requests waiting for confirmation. Please call reception on ' + RECEPTION_PHONE + ' if you need another one.');
+                    } else {
+                        showAlert('Something went wrong on our side and your booking was not saved. Please try again, or call reception on ' + RECEPTION_PHONE + '.');
+                    }
+                }).catch(function () {
+                    busy(false);
+                    showAlert("We couldn't reach our booking system. Check your connection and try again, or call reception on " + RECEPTION_PHONE + '.');
+                });
+            }
+
+            window.addEventListener('beforeunload', function (e) {
+                if (dirty && !submitted) { e.preventDefault(); e.returnValue = ''; }
+            });
+
+            // ---------- mobile menu ----------
+            (function () {
+                var btn = $('menu-btn'), menu = $('mobile-menu');
+                var icon = btn.querySelector('i');
+                function setOpen(open) {
+                    menu.hidden = !open;
+                    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+                    icon.className = open ? 'fa-solid fa-xmark text-2xl' : 'fa-solid fa-bars text-2xl';
+                }
+                btn.addEventListener('click', function () { setOpen(menu.hidden); });
+                menu.addEventListener('click', function (e) { if (e.target.closest('a')) { setOpen(false); } });
+                document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setOpen(false); } });
+            })();
+
+            buildDates();
+            buildStepper();
+            paintProgress();
+            syncConditional();
+        })();
+    </script>
+</body>
+</html>

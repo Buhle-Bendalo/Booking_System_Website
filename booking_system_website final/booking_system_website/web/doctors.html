@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Doctors | Lumina Health Clinic</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        medical: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Tailwind's display classes would otherwise override the hidden attribute */
+        [hidden] { display: none !important; }
+        dialog#profile-dialog { border: 0; padding: 0; background: transparent; max-height: none; overflow: visible; }
+        dialog#profile-dialog::backdrop { background: rgba(19, 78, 74, .55); }
+        @media (prefers-reduced-motion: no-preference) {
+            dialog#profile-dialog[open] { animation: pdIn .2s ease-out both; }
+            dialog#profile-dialog[open]::backdrop { animation: pdFade .2s ease-out both; }
+        }
+        @keyframes pdIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+        @keyframes pdFade { from { opacity: 0; } to { opacity: 1; } }
+        summary { list-style: none; }
+        summary::-webkit-details-marker { display: none; }
+        details[open] .chev { transform: rotate(180deg); }
+
+        /* Smooth page-to-page cross-fade (recent Chrome and Edge, served over http; ignored elsewhere) */
+        @media (prefers-reduced-motion: no-preference) {
+            @view-transition { navigation: auto; }
+            header { view-transition-name: site-header; }
+        }
+        /* No gliding for people who ask their system for less motion */
+        @media (prefers-reduced-motion: reduce) {
+            html.scroll-smooth { scroll-behavior: auto; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased flex flex-col min-h-screen">
+
+    <!-- Navigation (same as the home page) -->
+    <header class="bg-white shadow-sm sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="index.html" class="flex-shrink-0 flex items-center gap-2">
+                    <div class="w-10 h-10 bg-medical-500 rounded-lg flex items-center justify-center text-white shadow-md">
+                        <i class="fa-solid fa-notes-medical text-xl"></i>
+                    </div>
+                    <span class="font-bold text-2xl text-medical-900 tracking-tight">Lumina<span class="text-medical-500">Health</span></span>
+                </a>
+                <nav class="hidden md:flex space-x-8 items-center">
+                    <a href="index.html" class="text-gray-600 hover:text-medical-600 font-medium transition-colors">Home</a>
+                    <a href="index.html?to=services" class="text-gray-600 hover:text-medical-600 font-medium transition-colors">Services</a>
+                    <a href="doctors.html" class="text-medical-600 font-semibold" aria-current="page">Our Doctors</a>
+                    <a href="book.html" class="text-gray-600 hover:text-medical-600 font-medium transition-colors">Book Online</a>
+                    <a href="index.html?to=contact" class="text-gray-600 hover:text-medical-600 font-medium transition-colors">Contact</a>
+                </nav>
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button id="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu"
+                            class="text-gray-600 hover:text-medical-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500 rounded-lg px-1">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu panel -->
+        <div id="mobile-menu" hidden class="md:hidden border-t border-gray-100 bg-white shadow-sm">
+            <nav class="max-w-7xl mx-auto px-4 py-2 sm:px-6" aria-label="Mobile">
+                <a href="index.html" class="block border-b border-gray-100 py-3 font-medium last:border-0 text-gray-700 hover:text-medical-600">Home</a>
+                <a href="index.html?to=services" class="block border-b border-gray-100 py-3 font-medium last:border-0 text-gray-700 hover:text-medical-600">Services</a>
+                <a href="doctors.html" class="block border-b border-gray-100 py-3 font-medium last:border-0 text-medical-600 font-semibold" aria-current="page">Our Doctors</a>
+                <a href="book.html" class="block border-b border-gray-100 py-3 font-medium last:border-0 text-gray-700 hover:text-medical-600">Book Online</a>
+                <a href="index.html?to=contact" class="block border-b border-gray-100 py-3 font-medium last:border-0 text-gray-700 hover:text-medical-600">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+
+        <!-- Title -->
+        <section class="bg-medical-50 py-14">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <h1 class="text-4xl font-extrabold tracking-tight text-medical-900 sm:text-5xl">Our doctors</h1>
+                <p class="mt-3 max-w-2xl text-lg text-gray-600">Select a doctor to read their profile. Every doctor listed here can be booked through our chat assistant or the online booking form.</p>
+                <p id="count" class="mt-4 text-sm font-medium text-medical-800" aria-live="polite"></p>
+            </div>
+        </section>
+
+        <!-- Doctor list -->
+        <section class="py-14">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div id="notice" hidden class="mb-8 max-w-3xl rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-amber-900"></div>
+                <p id="loading" class="text-gray-500">Loading doctors…</p>
+                <p id="empty" hidden class="text-gray-600">No doctors are listed yet. Add one with the admin form below.</p>
+                <div id="doctor-grid" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
+            </div>
+        </section>
+
+        <!-- Admin: add a doctor -->
+        <section class="pb-20">
+            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <details class="rounded-2xl border border-gray-200 bg-white shadow-sm">
+                    <summary class="flex cursor-pointer items-center justify-between gap-4 px-6 py-5 font-semibold text-medical-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500 rounded-2xl">
+                        <span><i class="fa-solid fa-lock mr-3 text-medical-500"></i>Clinic admin: add a doctor</span>
+                        <i class="fa-solid fa-chevron-down chev text-gray-400 transition-transform"></i>
+                    </summary>
+
+                    <form id="add-form" class="grid gap-4 px-6 pb-6 sm:grid-cols-2" novalidate>
+                        <p class="text-sm text-gray-500 sm:col-span-2">Only clinic staff can add doctors. The login is checked by the database, not by this page.</p>
+
+                        <label class="block">
+                            <span class="mb-1 block text-sm font-medium text-gray-700">Admin username</span>
+                            <input id="admin-user" type="text" autocomplete="off" required
+                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-500">
+                        </label>
+                        <label class="block">
+                            <span class="mb-1 block text-sm font-medium text-gray-700">Admin password</span>
+                            <input id="admin-pass" type="password" autocomplete="off" required
+                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-500">
+                        </label>
+                        <label class="block">
+                            <span class="mb-1 block text-sm font-medium text-gray-700">Doctor's full name</span>
+                            <input id="doc-name" type="text" maxlength="100" placeholder="Dr. Naledi Khumalo" required
+                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-500">
+                        </label>
+                        <label class="block">
+                            <span class="mb-1 block text-sm font-medium text-gray-700">Specialty</span>
+                            <input id="doc-spec" type="text" maxlength="60" list="specialties" placeholder="General Practice" required
+                                   class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-500">
+                            <datalist id="specialties">
+                                <option value="General Practice"></option>
+                                <option value="Pediatrics"></option>
+                                <option value="Mental Health"></option>
+                                <option value="Dermatology"></option>
+                                <option value="Cardiology"></option>
+                            </datalist>
+                        </label>
+
+                        <div class="flex flex-wrap items-center gap-4 sm:col-span-2">
+                            <button id="add-btn" type="submit"
+                                    class="rounded-full bg-medical-500 px-6 py-2.5 font-semibold text-white shadow-lg shadow-medical-500/30 transition-colors hover:bg-medical-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-800 disabled:opacity-60">
+                                Add doctor
+                            </button>
+                            <p id="form-msg" role="status" aria-live="polite" class="text-sm"></p>
+                        </div>
+                    </form>
+                </details>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-medical-900 py-8 text-center text-sm text-gray-400">
+        &copy; 2026 Lumina Health Clinic. <a href="index.html" class="underline hover:text-white">Back to home</a>
+    </footer>
+
+    <!-- Doctor profile pop-up -->
+    <dialog id="profile-dialog" aria-labelledby="pd-name" class="w-[calc(100%-2rem)] max-w-2xl">
+        <div class="max-h-[88vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+            <div class="relative bg-medical-50 px-6 pb-6 pt-8 sm:px-8">
+                <button id="pd-close" type="button" aria-label="Close profile"
+                        class="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-gray-500 hover:bg-white hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+                <div class="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
+                    <div id="pd-photo" class="flex-none"></div>
+                    <div class="min-w-0">
+                        <h2 id="pd-name" class="text-2xl font-extrabold tracking-tight text-medical-900 sm:text-3xl"></h2>
+                        <p class="mt-2 flex flex-wrap items-center gap-2">
+                            <span id="pd-spec" class="inline-block rounded-full bg-teal-100 px-3 py-0.5 text-sm font-medium text-teal-800"></span>
+                            <span id="pd-focus" class="text-sm text-gray-600"></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-6 sm:px-8">
+                <p id="pd-summary" class="text-gray-700"></p>
+
+                <dl id="pd-facts" class="mt-6 divide-y divide-gray-100 rounded-xl border border-gray-200 text-sm"></dl>
+
+                <div id="pd-bio-wrap" class="mt-6">
+                    <h3 class="font-bold text-gray-900">About</h3>
+                    <p id="pd-bio" class="mt-2 text-gray-700"></p>
+                </div>
+
+                <p id="pd-soon" class="mt-6 rounded-xl border border-dashed border-gray-300 p-4 text-sm text-gray-600" hidden>
+                    A full profile for this doctor is coming soon. You can still book an appointment below.
+                </p>
+
+                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <a id="pd-chat" href="#" data-open-chat
+                       class="inline-flex items-center justify-center gap-2 rounded-full bg-medical-500 px-6 py-3 font-semibold text-white shadow-lg shadow-medical-500/30 transition-colors hover:bg-medical-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-medical-500">
+                        <i class="fa-regular fa-calendar-check"></i> Book via Chat
+                    </a>
+                    <a href="book.html"
+                       class="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-3 font-semibold text-medical-900 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500">
+                        <i class="fa-regular fa-pen-to-square"></i> Book online
+                    </a>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        // ------------------------------------------------------------------
+        // PASTE YOUR TWO VALUES HERE. Keep the quotes.
+        //   URL: Supabase > Project Settings > API (looks like https://xxxx.supabase.co)
+        //   Key: the PUBLISHABLE key (sb_publishable_...).
+        // NEVER paste the secret key (sb_secret_...) into this file. Anyone who opens
+        // the page can read it, and it opens your whole database, patient data included.
+        // ------------------------------------------------------------------
+        const SUPABASE_URL = 'PASTE_YOUR_SUPABASE_URL';
+        const SUPABASE_PUBLISHABLE_KEY = 'PASTE_YOUR_PUBLISHABLE_KEY';
+        // ------------------------------------------------------------------
+
+        (function () {
+            var grid = document.getElementById('doctor-grid');
+            var loading = document.getElementById('loading');
+            var empty = document.getElementById('empty');
+            var notice = document.getElementById('notice');
+            var count = document.getElementById('count');
+            var form = document.getElementById('add-form');
+            var msg = document.getElementById('form-msg');
+            var btn = document.getElementById('add-btn');
+
+            function showNotice(text) {
+                notice.textContent = text;
+                notice.hidden = false;
+                loading.hidden = true;
+            }
+
+            // Refuse to run if a secret key was pasted by mistake
+            function keyProblem() {
+                var key = String(SUPABASE_PUBLISHABLE_KEY || '').trim();
+                if (/PASTE_YOUR/.test(SUPABASE_URL) || /PASTE_YOUR/.test(key)) {
+                    return 'Add your Supabase URL and publishable key at the top of the script in this file.';
+                }
+                if (/^sb_secret_/i.test(key)) {
+                    return 'That is a secret key. Remove it from this file and use the publishable key instead.';
+                }
+                var parts = key.split('.');
+                if (parts.length === 3) {
+                    try {
+                        var payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        if (payload && payload.role === 'service_role') {
+                            return 'That is a service_role key. Remove it from this file and use the publishable (anon) key instead.';
+                        }
+                    } catch (e) { /* not a readable JWT: carry on */ }
+                }
+                return '';
+            }
+
+            function explain(err) {
+                var m = String((err && err.message) || err);
+                if (/HTTP 404/.test(m)) return 'The database does not have the doctor functions yet. Run patch_doctors_admin.sql in the Supabase SQL Editor.';
+                if (/HTTP 401|HTTP 403/.test(m)) return 'The database rejected the key. Check that you pasted the publishable key and the correct project URL.';
+                if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Could not reach the database. Check the project URL and your internet connection.';
+                return 'Something went wrong (' + m + ').';
+            }
+
+            function rpc(name, body) {
+                return fetch(String(SUPABASE_URL).replace(/\/+$/, '') + '/rest/v1/rpc/' + name, {
+                    method: 'POST',
+                    headers: { 'apikey': SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body || {})
+                }).then(function (res) {
+                    if (!res.ok) { throw new Error('HTTP ' + res.status); }
+                    return res.json();
+                });
+            }
+
+            function initials(name) {
+                var words = String(name).replace(/^dr\.?\s+/i, '').split(/\s+/).filter(Boolean);
+                var letters = (words[0] ? words[0].charAt(0) : '') +
+                              (words.length > 1 ? words[words.length - 1].charAt(0) : '');
+                return (letters || String(name).charAt(0) || '?').toUpperCase();
+            }
+
+            // ---------- doctor profiles ----------
+            // Matched to the database list by name, ignoring "Dr", dots and capitals,
+            // so "Dr. D Khumalo" and "Dr D Khumalo" both find the same profile.
+            // A doctor with no entry here still gets a card and a short pop-up.
+            var PROFILES = {
+                'x jacobs': {
+                    photo: 'images/dr-x-jacobs.jpg',
+                    focus: 'Skin Health',
+                    summary: 'Specialises in skin health, helping patients manage common skin conditions, identify concerns, and develop personalised skincare and treatment plans.',
+                    qualification: 'MBChB; MMed (Dermatology)',
+                    languages: 'English, Afrikaans',
+                    experience: '8 years',
+                    bio: 'Dr X Jacobs is a fictional dermatology specialist with an interest in acne management, eczema, pigmentation, and general skin health. She takes a patient-centred approach, helping individuals understand their skin concerns and explore suitable treatment options. Her approach emphasises preventative skincare, patient education, and personalised care plans.'
+                },
+                'd khumalo': {
+                    photo: 'images/dr-d-khumalo.jpg',
+                    focus: 'Primary Care',
+                    summary: 'Provides general healthcare support, routine health assessments, and guidance for common illnesses, preventive care, and ongoing health concerns.',
+                    qualification: 'MBChB',
+                    languages: 'English, isiXhosa, isiZulu',
+                    experience: '6 years',
+                    bio: 'Dr D Khumalo is a fictional general practitioner committed to accessible, compassionate primary healthcare. His areas of interest include routine health screenings, common illnesses, preventative health, and the ongoing management of everyday health concerns. He aims to create a comfortable environment where patients can discuss their symptoms, understand their options, and make informed decisions about their health.'
+                },
+                'zeon zun': {
+                    photo: 'images/dr-zeon-zun.jpg',
+                    focus: 'Heart Health',
+                    summary: 'Focuses on heart and cardiovascular health, helping patients assess heart-related concerns, understand risk factors, and manage cardiovascular conditions.',
+                    qualification: 'MBChB; FCP (SA); Certificate in Cardiology',
+                    languages: 'English, Mandarin',
+                    experience: '10 years',
+                    bio: 'Dr Zeon Zun is a fictional cardiology specialist focused on cardiovascular risk assessment, blood pressure management, and long-term heart health. He believes in combining patient education with evidence-based care to help individuals better understand their cardiovascular health. His approach emphasises early risk identification, lifestyle considerations, and ongoing monitoring in collaboration with the wider healthcare team.'
+                }
+            };
+
+            function profileFor(name) {
+                var key = String(name || '').toLowerCase().replace(/^dr\.?\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+                return PROFILES[key] || null;
+            }
+
+            // Photo if there is one (falls back to initials if the file is missing), else initials
+            function makeAvatar(doc, profile, sizeClass, shapeClass) {
+                var box = document.createElement('div');
+                function initialsBox() {
+                    var d = document.createElement('div');
+                    d.className = 'flex ' + sizeClass + ' flex-none items-center justify-center ' + shapeClass + ' bg-medical-100 text-lg font-bold text-medical-800';
+                    d.textContent = initials(doc.full_name);
+                    d.setAttribute('aria-hidden', 'true');
+                    return d;
+                }
+                if (profile && profile.photo) {
+                    var img = document.createElement('img');
+                    img.src = profile.photo;
+                    img.alt = 'Photo of ' + doc.full_name;
+                    img.loading = 'lazy';
+                    img.width = 480; img.height = 480;
+                    img.className = sizeClass + ' flex-none ' + shapeClass + ' object-cover object-top bg-medical-100';
+                    img.addEventListener('error', function () { box.textContent = ''; box.appendChild(initialsBox()); });
+                    box.appendChild(img);
+                } else {
+                    box.appendChild(initialsBox());
+                }
+                return box;
+            }
+
+            function makeCard(doc) {
+                var profile = profileFor(doc.full_name);
+                var card = document.createElement('article');
+                card.className = 'flex flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md';
+
+                var top = document.createElement('div');
+                top.className = 'flex items-center gap-4';
+
+                // clicking the photo is a mouse shortcut; keyboard users use the name button below
+                var photoBtn = document.createElement('button');
+                photoBtn.type = 'button';
+                photoBtn.tabIndex = -1;
+                photoBtn.setAttribute('aria-hidden', 'true');
+                photoBtn.className = 'flex-none rounded-full';
+                photoBtn.appendChild(makeAvatar(doc, profile, 'h-16 w-16', 'rounded-full'));
+                photoBtn.addEventListener('click', function () { openProfile(doc, profile, nameBtn); });
+
+                var text = document.createElement('div');
+                text.className = 'min-w-0';
+                var name = document.createElement('h3');
+                name.className = 'text-lg font-bold text-gray-900';
+                var nameBtn = document.createElement('button');
+                nameBtn.type = 'button';
+                nameBtn.className = 'text-left hover:text-medical-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500 rounded';
+                nameBtn.textContent = doc.full_name;
+                nameBtn.setAttribute('aria-haspopup', 'dialog');
+                nameBtn.addEventListener('click', function () { openProfile(doc, profile, nameBtn); });
+                name.appendChild(nameBtn);
+                var spec = document.createElement('p');
+                spec.className = 'mt-1 inline-block rounded-full bg-teal-100 px-3 py-0.5 text-sm font-medium text-teal-800';
+                spec.textContent = doc.specialty;
+                text.appendChild(name);
+                text.appendChild(spec);
+
+                top.appendChild(photoBtn);
+                top.appendChild(text);
+
+                var actions = document.createElement('div');
+                actions.className = 'mt-5 flex flex-wrap items-center gap-x-6 gap-y-2';
+
+                var more = document.createElement('button');
+                more.type = 'button';
+                more.className = 'inline-flex items-center gap-2 font-semibold text-gray-700 hover:text-medical-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-500 rounded';
+                more.innerHTML = '<i class="fa-regular fa-id-card"></i> View profile';
+                more.setAttribute('aria-label', 'View profile of ' + doc.full_name);
+                more.setAttribute('aria-haspopup', 'dialog');
+                more.addEventListener('click', function () { openProfile(doc, profile, more); });
+
+                var link = document.createElement('a');
+                link.href = '#';
+                link.setAttribute('data-open-chat', '');
+                link.className = 'inline-flex items-center gap-2 font-semibold text-medical-600 hover:text-medical-800';
+                var icon = document.createElement('i');
+                icon.className = 'fa-regular fa-calendar-check';
+                link.appendChild(icon);
+                link.appendChild(document.createTextNode(' Book via Chat'));
+
+                actions.appendChild(more);
+                actions.appendChild(link);
+                card.appendChild(top);
+                card.appendChild(actions);
+                return card;
+            }
+
+            // ---------- profile pop-up ----------
+            var dlg = document.getElementById('profile-dialog');
+
+            function openProfile(doc, profile) {
+                document.getElementById('pd-name').textContent = doc.full_name;
+                document.getElementById('pd-spec').textContent = doc.specialty;
+                var focus = document.getElementById('pd-focus');
+                focus.textContent = profile && profile.focus ? profile.focus : '';
+                focus.hidden = !(profile && profile.focus);
+
+                var photo = document.getElementById('pd-photo');
+                photo.textContent = '';
+                photo.appendChild(makeAvatar(doc, profile, 'h-28 w-28 sm:h-32 sm:w-32', 'rounded-2xl'));
+
+                var summary = document.getElementById('pd-summary');
+                summary.textContent = profile ? profile.summary : '';
+                summary.hidden = !profile;
+
+                var facts = document.getElementById('pd-facts');
+                facts.textContent = '';
+                var rows = profile ? [
+                    ['Qualification', profile.qualification],
+                    ['Languages', profile.languages],
+                    ['Experience', profile.experience]
+                ] : [];
+                rows.forEach(function (r) {
+                    var row = document.createElement('div');
+                    row.className = 'grid grid-cols-3 gap-3 px-4 py-3';
+                    var dt = document.createElement('dt');
+                    dt.className = 'text-gray-500';
+                    dt.textContent = r[0];
+                    var dd = document.createElement('dd');
+                    dd.className = 'col-span-2 font-medium text-gray-900';
+                    dd.textContent = r[1];
+                    row.appendChild(dt);
+                    row.appendChild(dd);
+                    facts.appendChild(row);
+                });
+                facts.hidden = rows.length === 0;
+
+                document.getElementById('pd-bio').textContent = profile ? profile.bio : '';
+                document.getElementById('pd-bio-wrap').hidden = !profile;
+                document.getElementById('pd-soon').hidden = !!profile;
+
+                dlg.scrollTop = 0;
+                var body = dlg.firstElementChild;
+                if (body) { body.scrollTop = 0; }
+                if (typeof dlg.showModal === 'function') {
+                    document.documentElement.style.overflow = 'hidden';
+                    dlg.showModal();
+                } else {
+                    dlg.setAttribute('open', '');   // very old browsers: still readable
+                }
+            }
+
+            document.getElementById('pd-close').addEventListener('click', function () { dlg.close(); });
+            // a click on the dimmed area (the dialog element itself, outside the white panel) closes it
+            dlg.addEventListener('click', function (e) { if (e.target === dlg) { dlg.close(); } });
+            // booking from the pop-up: close it first so the chat window can open on top
+            dlg.addEventListener('click', function (e) { if (e.target.closest('a')) { dlg.close(); } });
+            dlg.addEventListener('close', function () { document.documentElement.style.overflow = ''; });
+
+            function loadDoctors() {
+                var problem = keyProblem();
+                if (problem) { showNotice(problem); return; }
+
+                notice.hidden = true;
+                rpc('list_doctors').then(function (rows) {
+                    loading.hidden = true;
+                    grid.textContent = '';
+                    if (!Array.isArray(rows) || rows.length === 0) {
+                        empty.hidden = false;
+                        count.textContent = '';
+                        return;
+                    }
+                    empty.hidden = true;
+                    rows.forEach(function (d) { grid.appendChild(makeCard(d)); });
+                    count.textContent = rows.length + (rows.length === 1 ? ' doctor' : ' doctors') + ' available to book';
+                }).catch(function (err) {
+                    showNotice(explain(err));
+                });
+            }
+
+            function setMsg(text, good) {
+                msg.textContent = text;
+                msg.className = 'text-sm ' + (good ? 'text-green-700' : 'text-red-700');
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var problem = keyProblem();
+                if (problem) { setMsg(problem, false); return; }
+
+                var user = document.getElementById('admin-user').value.trim();
+                var passEl = document.getElementById('admin-pass');
+                var pass = passEl.value;
+                var name = document.getElementById('doc-name').value.trim();
+                var spec = document.getElementById('doc-spec').value.trim();
+
+                if (!user || !pass || !name || !spec) {
+                    setMsg('Fill in all four fields.', false);
+                    return;
+                }
+
+                btn.disabled = true;
+                setMsg('Checking…', true);
+
+                rpc('admin_add_doctor', {
+                    p_username: user, p_password: pass, p_full_name: name, p_specialty: spec
+                }).then(function (r) {
+                    var ok = r && r.ok;
+                    if (ok === 'yes') {
+                        setMsg(name + ' was added.', true);
+                        document.getElementById('doc-name').value = '';
+                        document.getElementById('doc-spec').value = '';
+                        loadDoctors();
+                    } else if (ok === 'denied') {
+                        setMsg('Wrong admin username or password.', false);
+                    } else if (ok === 'duplicate') {
+                        setMsg('A doctor with that name already exists.', false);
+                    } else if (ok === 'invalid') {
+                        setMsg('Use letters only for the name (at least 3 characters) and the specialty (at least 2).', false);
+                    } else {
+                        setMsg('Something went wrong. Try again.', false);
+                    }
+                }).catch(function (err) {
+                    setMsg(explain(err), false);
+                }).then(function () {
+                    passEl.value = '';        // never keep the password around
+                    btn.disabled = false;
+                });
+            });
+
+            loadDoctors();
+        })();
+    </script>
+
+    <!-- Chat widget (same one as the home page) -->
+    <script>
+        (function(I, n, f, o, b, i, p) {
+            I[b] = I[b] || function() { (I[b].q = I[b].q || []).push(arguments); };
+            I[b].t = 1 * new Date();
+            i = n.createElement(f);
+            i.async = 1;
+            i.src = o;
+            p = n.getElementsByTagName(f)[0];
+            p.parentNode.insertBefore(i, p);
+        })(window, document, 'script', 'https://livechat.infobip.com/widget.js', 'liveChat');
+
+        liveChat('init', 'd9f2c52c-9088-4c94-b2c6-46b85894a6a5');
+
+        // "Book via Chat" links open the chat window (works for cards added later too)
+        document.addEventListener('click', function (e) {
+            var trigger = e.target.closest('[data-open-chat]');
+            if (!trigger) { return; }
+            e.preventDefault();
+            try { liveChat('show', null, function () {}); }
+            catch (err) { console.warn('Could not open the chat window', err); }
+        });
+    </script>
+
+    <script>
+        // Mobile menu
+        (function () {
+            var btn = document.getElementById('menu-btn');
+            var menu = document.getElementById('mobile-menu');
+            if (!btn || !menu) { return; }
+            var icon = btn.querySelector('i');
+            function setOpen(open) {
+                menu.hidden = !open;
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+                icon.className = open ? 'fa-solid fa-xmark text-2xl' : 'fa-solid fa-bars text-2xl';
+            }
+            btn.addEventListener('click', function () { setOpen(menu.hidden); });
+            menu.addEventListener('click', function (e) { if (e.target.closest('a')) { setOpen(false); } });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { setOpen(false); } });
+        })();
+    </script>
+
+</body>
+</html>
